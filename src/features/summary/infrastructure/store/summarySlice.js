@@ -5,7 +5,8 @@ const initialState = {
   currentSummary: null,
   isLoading: false,
   error: null,
-  isWebSocketConnected: false, // WebSocket 상태 추가
+  isWebSocketConnected: false,
+  webSocketSummary: null,
 };
 
 const summarySlice = createSlice({
@@ -13,7 +14,6 @@ const summarySlice = createSlice({
   initialState,
   reducers: {
     setSummaries: (state, action) => {
-      // 클래스 인스턴스를 순수 객체로 변환
       state.summaries = action.payload.map(summary =>
         summary.toPlainObject ? summary.toPlainObject() : summary
       );
@@ -22,8 +22,17 @@ const summarySlice = createSlice({
       state.currentSummary = action.payload.toPlainObject
         ? action.payload.toPlainObject()
         : action.payload;
-    },
 
+      // 요약이 완료되면 summaries 배열도 업데이트
+      if (action.payload.status === 'completed') {
+        const index = state.summaries.findIndex(s => s.videoId === action.payload.videoId);
+        if (index >= 0) {
+          state.summaries[index] = action.payload;
+        } else {
+          state.summaries.push(action.payload);
+        }
+      }
+    },
     setLoading: (state, action) => {
       state.isLoading = action.payload;
     },
@@ -35,8 +44,11 @@ const summarySlice = createSlice({
         summary => summary.videoId !== action.payload
       );
     },
-    setWebSocketConnected: (state, action) => { // 추가된 액션
+    setWebSocketConnected: (state, action) => {
       state.isWebSocketConnected = action.payload;
+    },
+    setWebSocketSummary: (state, action) => {
+      state.webSocketSummary = action.payload;
     },
   },
 });
@@ -47,7 +59,8 @@ export const {
   setLoading,
   setError,
   removeSummary,
-  setWebSocketConnected, // 추가된 액션 export
+  setWebSocketConnected,
+  setWebSocketSummary,
 } = summarySlice.actions;
 
 export default summarySlice.reducer;
