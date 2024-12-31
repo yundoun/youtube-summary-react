@@ -1,30 +1,43 @@
-import { useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useEffect, useCallback } from 'react';
+import { useDispatch } from 'react-redux';
 import webSocketService from '../../infrastructure/services/websocket';
-import { setWebSocketConnected } from '../../infrastructure/store/summarySlice';
+import { setCurrentSummary, setWebSocketConnected } from '../../infrastructure/store/summarySlice';
 
 export const useWebSocket = (videoId) => {
-  const isWebSocketConnected = useSelector(
-    state => state.summaryFeature.summary.isWebSocketConnected
-  );
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    if (videoId) {
-      // WebSocket 연결
-      webSocketService.connect((type, data) => {
-        console.log(`WebSocket Message Type: ${type}`, data);
-      });
-      dispatch(setWebSocketConnected(true));
+  const handleMessage = useCallback((type, data) => {
+    console.log(`WebSocket Message Type: ${type}`, data);
+
+    switch (type) {
+      case 'summary':
+        dispatch(setCurrentSummary({
+          videoId,
+          summary: data,
+          status: 'in_progress'
+        }));
+        break;
+      case 'complete':
+        dispatch(setCurrentSummary({
+          videoId,
+          status: 'completed'
+        }));
+        dispatch(setWebSocketConnected(false));
+        break;
+      default:
+        console.log('Unknown message type:', type);
     }
+  }, [dispatch, videoId]);
+
+  useEffect(() => {
+    if (!videoId) return;
+
+    webSocketService.connect(videoId, handleMessage);
+    dispatch(setWebSocketConnected(true));
 
     return () => {
-      if (isWebSocketConnected) {
-        webSocketService.close();
-        dispatch(setWebSocketConnected(false));
-      }
+      webSocketService.close();
+      dispatch(setWebSocketConnected(false));
     };
-  }, [videoId]);
-
-  return { isWebSocketConnected };
+  }, [videoId, handleMessage, dispatch]);
 };

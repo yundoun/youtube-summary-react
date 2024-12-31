@@ -1,50 +1,102 @@
-import { useState, useRef } from 'react';
-import { useSummary } from '../../hooks/useSummary';
+import { useEffect, useState } from 'react';
+import webSocketService from '../../../infrastructure/services/websocket';
+import { extractVideoId } from '../../../../../core/utils/videoId';
 
 export const SummaryInput = () => {
   const [url, setUrl] = useState('');
-  const [isHovered, setIsHovered] = useState(false);
-  const { createSummary, isLoading, error } = useSummary();
-  const inputRef = useRef(null);
+  const [summary, setSummary] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      webSocketService.close();
+    };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!url) {
+      console.warn('URL is empty!');
+      return;
+    }
+
+    setLoading(true);
+    setSummary(null);
+
+    // 1. videoId 추출 및 검증
+    const videoId = extractVideoId(url);
+    if (!videoId) {
+      console.error('Invalid YouTube URL');
+      setLoading(false);
+      return;
+    }
+
+    console.log('Starting WebSocket connection...');
+    // WebSocket 연결 - videoId만 전송
+    webSocketService.connect(videoId);
+
+    // 2. WebSocket 메시지 핸들러 설정
+    webSocketService.setMessageHandler((type, data) => {
+      console.log(`WebSocket event received: type=${type}`, data);
+      if (type === 'summary') {
+        console.log('Summary in progress:', data);
+      } else if (type === 'complete') {
+        console.log('Summary completed:', data);
+        setSummary(data);
+        setLoading(false);
+        webSocketService.close();
+      }
+    });
+
     try {
-      await createSummary(url);
-      setUrl('');
-    } catch (err) {
-      console.error(err);
+      console.log('Sending POST request to /summary/content with URL:', url);
+      const response = await fetch('/summary/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+
+      console.log('POST request response status:', response.status);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(
+          'Server returned an error:',
+          response.status,
+          response.statusText,
+          errorText
+        );
+        setLoading(false);
+        webSocketService.close();
+      } else {
+        const responseData = await response.json();
+        console.log('POST request successful. Response data:', responseData);
+      }
+    } catch (error) {
+      console.error('Error during POST request:', error);
+      setLoading(false);
+      webSocketService.close();
     }
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      <form onSubmit={handleSubmit} className="relative">
+    <div>
+      <form onSubmit={handleSubmit}>
         <input
-          ref={inputRef}
           type="text"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="Enter YouTube URL"
-          className="w-full p-4 rounded-lg shadow-lg text-lg border focus:outline-none focus:ring-2 focus:ring-blue-500"
-          disabled={isLoading}
         />
-        <button
-          type="submit"
-          disabled={isLoading}
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-          className={`mt-4 w-full p-4 rounded-lg text-white font-bold transition-colors ${
-            isHovered ? 'bg-blue-600' : 'bg-blue-500'
-          } ${
-            isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-600'
-          }`}>
-          {isLoading ? 'Generating Summary...' : 'Start Summary'}
+        <button type="submit" disabled={loading}>
+          Generate Summary
         </button>
       </form>
-      {error && (
-        <div className="mt-4 p-4 bg-red-100 text-red-700 rounded-lg">
-          {error}
+
+      {loading && <p>Generating summary...</p>}
+      {summary && (
+        <div>
+          <h2>Summary:</h2>
+          <pre>{JSON.stringify(summary, null, 2)}</pre>
         </div>
       )}
     </div>

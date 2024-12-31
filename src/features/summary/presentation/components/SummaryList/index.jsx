@@ -1,35 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useSummary } from '../../hooks/useSummary';
-import { SummaryItem } from '../SummaryItem';
-import webSocketService from '../../../infrastructure/services/websocket';
 
 export const SummaryList = () => {
-  const { summaries, fetchAllSummaries, deleteSummary, isLoading } =
-    useSummary();
-  const [generatingSummaries, setGeneratingSummaries] = useState([]);
+  const { summaries, fetchAllSummaries, isLoading } = useSummary();
 
   useEffect(() => {
+    // 요약 데이터 가져오기
     fetchAllSummaries();
-  }, []);
-
-  useEffect(() => {
-    // WebSocket 연결
-    webSocketService.connect((type, data) => {
-      if (type === 'summary') {
-        // 새로운 요약 생성 시작
-        setGeneratingSummaries((prev) => [...prev, data.videoId]);
-      } else if (type === 'complete') {
-        // 요약 생성 완료
-        setGeneratingSummaries((prev) =>
-          prev.filter((id) => id !== data.videoId)
-        );
-      }
-    });
-
-    return () => {
-      // WebSocket 연결 해제
-      webSocketService.close();
-    };
   }, []);
 
   if (isLoading) {
@@ -51,12 +28,15 @@ export const SummaryList = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {summaries.map((summary) => (
-        <SummaryItem
-          key={summary.videoId}
-          summary={summary}
-          isGenerating={generatingSummaries.includes(summary.videoId)}
-          onDelete={deleteSummary}
-        />
+        <div key={summary.videoId} className="border rounded-lg shadow p-4">
+          <img
+            src={summary.thumbnailUrl}
+            alt={`${summary.title} thumbnail`}
+            className="w-full h-auto rounded-lg"
+          />
+          <h3 className="mt-2 font-bold text-lg">{summary.title}</h3>
+          <p className="mt-2 text-gray-600">{summary.summary}</p>
+        </div>
       ))}
     </div>
   );

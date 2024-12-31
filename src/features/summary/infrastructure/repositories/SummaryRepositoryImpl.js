@@ -46,8 +46,13 @@ export class SummaryRepositoryImpl extends SummaryRepository {
   }
 
   connectWebSocket(callback) {
+    if (!callback) {
+      console.warn('Callback function is required to connect WebSocket.');
+      return;
+    }
     webSocketService.connect(callback);
   }
+
 
   sendWebSocketMessage(message) {
     webSocketService.sendMessage(message);
