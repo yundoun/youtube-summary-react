@@ -6,6 +6,12 @@ class WebSocketService {
   }
 
   connect(onMessage) {
+    // 이미 연결된 경우 중복 연결 방지
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      console.warn('WebSocket is already connected.');
+      return;
+    }
+
     this.socket = new WebSocket(API_ENDPOINTS.WS_SUMMARY);
 
     this.socket.onopen = () => {
@@ -33,3 +39,4 @@ class WebSocketService {
 }
 
 export default new WebSocketService();
+

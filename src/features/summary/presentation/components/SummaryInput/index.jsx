@@ -1,52 +1,48 @@
-import { useState, useRef } from 'react';
-import { useSummary } from '../../hooks/useSummary';
+import { useState } from 'react';
+import webSocketService from '../../../infrastructure/services/websocket';
 
 export const SummaryInput = () => {
   const [url, setUrl] = useState('');
-  const [isHovered, setIsHovered] = useState(false);
-  const { createSummary, isLoading, error } = useSummary();
-  const inputRef = useRef(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!url) return;
+
+    // WebSocket 연결
+    webSocketService.connect((type, data) => {
+      if (type === 'summary') {
+        console.log('Summary in progress:', data);
+      } else if (type === 'complete') {
+        console.log('Summary completed:', data);
+      }
+    });
+
+    // 서버로 요청 보내기
     try {
-      await createSummary(url);
-      setUrl('');
-    } catch (err) {
-      console.error(err);
+      // 서버 API 호출 예시
+      const response = await fetch('/api/summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      const result = await response.json();
+      console.log('Server response:', result);
+    } catch (error) {
+      console.error('Error creating summary:', error);
+    } finally {
+      webSocketService.close(); // WebSocket 종료
     }
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      <form onSubmit={handleSubmit} className="relative">
-        <input
-          ref={inputRef}
-          type="text"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="Enter YouTube URL"
-          className="w-full p-4 rounded-lg shadow-lg text-lg border focus:outline-none focus:ring-2 focus:ring-blue-500"
-          disabled={isLoading}
-        />
-        <button
-          type="submit"
-          disabled={isLoading}
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-          className={`mt-4 w-full p-4 rounded-lg text-white font-bold transition-colors ${
-            isHovered ? 'bg-blue-600' : 'bg-blue-500'
-          } ${
-            isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-600'
-          }`}>
-          {isLoading ? 'Generating Summary...' : 'Start Summary'}
-        </button>
-      </form>
-      {error && (
-        <div className="mt-4 p-4 bg-red-100 text-red-700 rounded-lg">
-          {error}
-        </div>
-      )}
-    </div>
+    <form onSubmit={handleSubmit}>
+      <input
+        type="text"
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        placeholder="Enter YouTube URL"
+      />
+      <button type="submit">Generate Summary</button>
+    </form>
   );
 };
