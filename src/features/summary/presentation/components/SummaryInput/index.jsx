@@ -1,17 +1,15 @@
-import { useEffect, useState } from 'react';
-import webSocketService from '../../../infrastructure/services/websocket';
+import { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { useWebSocket } from '../../hooks/useWebSocket';
 import { extractVideoId } from '../../../../../core/utils/videoId';
+import { setLoading } from '../../../infrastructure/store/summarySlice';
 
 export const SummaryInput = () => {
   const [url, setUrl] = useState('');
-  const [summary, setSummary] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [activeVideoId, setActiveVideoId] = useState(null);
+  const dispatch = useDispatch();
 
-  useEffect(() => {
-    return () => {
-      webSocketService.close();
-    };
-  }, []);
+  useWebSocket(activeVideoId);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,33 +18,14 @@ export const SummaryInput = () => {
       return;
     }
 
-    setLoading(true);
-    setSummary(null);
-
-    // 1. videoId 추출 및 검증
     const videoId = extractVideoId(url);
     if (!videoId) {
       console.error('Invalid YouTube URL');
-      setLoading(false);
       return;
     }
 
-    console.log('Starting WebSocket connection...');
-    // WebSocket 연결 - videoId만 전송
-    webSocketService.connect(videoId);
-
-    // 2. WebSocket 메시지 핸들러 설정
-    webSocketService.setMessageHandler((type, data) => {
-      console.log(`WebSocket event received: type=${type}`, data);
-      if (type === 'summary') {
-        console.log('Summary in progress:', data);
-      } else if (type === 'complete') {
-        console.log('Summary completed:', data);
-        setSummary(data);
-        setLoading(false);
-        webSocketService.close();
-      }
-    });
+    dispatch(setLoading(true));
+    setActiveVideoId(null); // 기존 연결 초기화
 
     try {
       console.log('Sending POST request to /summary/content with URL:', url);
@@ -65,16 +44,16 @@ export const SummaryInput = () => {
           response.statusText,
           errorText
         );
-        setLoading(false);
-        webSocketService.close();
+        dispatch(setLoading(false));
       } else {
         const responseData = await response.json();
         console.log('POST request successful. Response data:', responseData);
+        // 약간의 지연 후 새 WebSocket 연결 설정
+        setTimeout(() => setActiveVideoId(videoId), 100);
       }
     } catch (error) {
       console.error('Error during POST request:', error);
-      setLoading(false);
-      webSocketService.close();
+      dispatch(setLoading(false));
     }
   };
 
@@ -87,18 +66,8 @@ export const SummaryInput = () => {
           onChange={(e) => setUrl(e.target.value)}
           placeholder="Enter YouTube URL"
         />
-        <button type="submit" disabled={loading}>
-          Generate Summary
-        </button>
+        <button type="submit">Generate Summary</button>
       </form>
-
-      {loading && <p>Generating summary...</p>}
-      {summary && (
-        <div>
-          <h2>Summary:</h2>
-          <pre>{JSON.stringify(summary, null, 2)}</pre>
-        </div>
-      )}
     </div>
   );
 };

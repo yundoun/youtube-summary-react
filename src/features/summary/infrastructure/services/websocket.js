@@ -3,59 +3,74 @@ import { API_ENDPOINTS } from '../../../../core/utils/constants';
 class WebSocketService {
   constructor() {
     this.socket = null;
-    this.messageHandler = null; // 메시지 핸들러를 클래스 속성으로 관리
+    this.messageHandler = null;
+    this.isConnecting = false;
   }
 
-  // 메시지 핸들러 설정을 위한 별도 메서드
   setMessageHandler(handler) {
     this.messageHandler = handler;
   }
 
-  // 연결 설정은 videoId만 처리
   connect(videoId) {
-    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      console.warn('WebSocket is already connected.');
+    if (this.isConnecting || this.socket?.readyState === WebSocket.OPEN) {
+      console.warn('WebSocket is already connected or connecting.');
       return;
     }
 
-    this.socket = new WebSocket(API_ENDPOINTS.WS_SUMMARY);
+    this.isConnecting = true;
 
-    this.socket.onopen = () => {
-      console.log('WebSocket Connected');
-      if (this.socket.readyState === WebSocket.OPEN) {
-        // videoId만 전송
-        this.socket.send(videoId);
-      }
-    };
+    try {
+      // 기존 연결 정리
+      this.close();
 
-    this.socket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log('WebSocket message received:', data);
-        if (this.messageHandler) {
-          this.messageHandler(data.type, data.data);
+      this.socket = new WebSocket(API_ENDPOINTS.WS_SUMMARY);
+
+      this.socket.onopen = () => {
+        console.log('WebSocket Connected');
+        if (this.socket.readyState === WebSocket.OPEN) {
+          this.socket.send(videoId);
         }
-      } catch (error) {
-        console.error('Error processing WebSocket message:', error);
-      }
-    };
+        this.isConnecting = false;
+      };
 
-    this.socket.onclose = () => {
-      console.log('WebSocket Disconnected');
-      this.messageHandler = null;
-    };
+      this.socket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log('WebSocket message received:', data);
 
-    this.socket.onerror = (error) => {
-      console.error('WebSocket Error:', error);
-    };
+          if (this.messageHandler) {
+            this.messageHandler(data.type, data.data);
+          }
+        } catch (error) {
+          console.error('Error processing WebSocket message:', error);
+        }
+      };
+
+      this.socket.onclose = () => {
+        console.log('WebSocket Disconnected');
+        this.messageHandler = null;
+        this.isConnecting = false;
+      };
+
+      this.socket.onerror = (error) => {
+        console.error('WebSocket Error:', error);
+        this.isConnecting = false;
+        this.close();
+      };
+
+    } catch (error) {
+      console.error('Error creating WebSocket connection:', error);
+      this.isConnecting = false;
+    }
   }
 
   close() {
     if (this.socket) {
       this.socket.close();
       this.socket = null;
-      this.messageHandler = null;
     }
+    this.messageHandler = null;
+    this.isConnecting = false;
   }
 }
 
