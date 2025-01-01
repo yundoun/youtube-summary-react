@@ -21,15 +21,17 @@ const summarySlice = createSlice({
     setCurrentSummary: (state, action) => {
       const { videoId, summary, thumbnailUrl, status } = action.payload;
 
-      // 현재 요약 데이터 설정
+      // Ensure thumbnailUrl is always generated
+      const generatedThumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+
       state.currentSummary = {
         videoId,
         summary: summary || state.currentSummary?.summary || '',
-        thumbnailUrl: thumbnailUrl || state.currentSummary?.thumbnailUrl || '',
+        thumbnailUrl: thumbnailUrl || generatedThumbnailUrl,
         status: status || state.currentSummary?.status || 'pending',
       };
 
-      // summaries 배열 업데이트
+      // Update summaries array
       const index = state.summaries.findIndex((s) => s.videoId === videoId);
       if (index >= 0) {
         state.summaries[index] = state.currentSummary;
@@ -52,11 +54,12 @@ const summarySlice = createSlice({
       state.isWebSocketConnected = action.payload;
     },
     setWebSocketSummary: (state, action) => {
-      state.webSocketSummary = action.payload;
+      const { videoId, summary } = action.payload;
 
-      // 현재 요약 상태에 WebSocket 데이터 추가
-      if (state.currentSummary) {
-        state.currentSummary.summary = action.payload;
+      if (state.currentSummary && state.currentSummary.videoId === videoId) {
+        state.currentSummary.summary = summary;
+        state.currentSummary.thumbnailUrl =
+          state.currentSummary.thumbnailUrl || `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
       }
     },
   },
