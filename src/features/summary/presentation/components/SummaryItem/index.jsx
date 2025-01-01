@@ -4,12 +4,14 @@ export const SummaryItem = ({ summary, isGenerating, onDelete }) => {
     <div className="bg-white rounded-lg shadow-lg overflow-hidden">
       <div className="relative">
         <img
-          src={summary.thumbnailUrl} // 동적으로 생성된 썸네일 URL 사용
-          alt={summary.title}
+          src={summary.thumbnailUrl || 'default-thumbnail.png'} // 썸네일 기본값 설정
+          alt={summary.title || 'No Title'}
           className="w-full h-48 object-cover"
         />
         <div className="absolute inset-0 bg-black bg-opacity-30">
-          <h3 className="text-white text-xl font-bold p-4">{summary.title}</h3>
+          <h3 className="text-white text-xl font-bold p-4">
+            {summary.title || 'Untitled Video'}
+          </h3>
         </div>
       </div>
 
@@ -22,7 +24,9 @@ export const SummaryItem = ({ summary, isGenerating, onDelete }) => {
         ) : (
           <div>
             <h4 className="font-bold mb-2">Summary:</h4>
-            <p className="text-gray-700">{summary.summary}</p>
+            <p className="text-gray-700">
+              {summary.summary || 'Summary is not available yet.'}
+            </p>
           </div>
         )}
 

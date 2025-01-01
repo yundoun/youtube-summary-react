@@ -14,23 +14,29 @@ const summarySlice = createSlice({
   initialState,
   reducers: {
     setSummaries: (state, action) => {
-      state.summaries = action.payload.map(summary =>
+      state.summaries = action.payload.map((summary) =>
         summary.toPlainObject ? summary.toPlainObject() : summary
       );
     },
     setCurrentSummary: (state, action) => {
-      state.currentSummary = action.payload.toPlainObject
-        ? action.payload.toPlainObject()
-        : action.payload;
+      const { videoId, summary, thumbnailUrl, status } = action.payload;
 
-      // 요약이 완료되면 summaries 배열도 업데이트
-      if (action.payload.status === 'completed') {
-        const index = state.summaries.findIndex(s => s.videoId === action.payload.videoId);
-        if (index >= 0) {
-          state.summaries[index] = action.payload;
-        } else {
-          state.summaries.push(action.payload);
-        }
+      // Ensure thumbnailUrl is always generated
+      const generatedThumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+
+      state.currentSummary = {
+        videoId,
+        summary: summary || state.currentSummary?.summary || '',
+        thumbnailUrl: thumbnailUrl || generatedThumbnailUrl,
+        status: status || state.currentSummary?.status || 'pending',
+      };
+
+      // Update summaries array
+      const index = state.summaries.findIndex((s) => s.videoId === videoId);
+      if (index >= 0) {
+        state.summaries[index] = state.currentSummary;
+      } else {
+        state.summaries.push(state.currentSummary);
       }
     },
     setLoading: (state, action) => {
@@ -41,14 +47,20 @@ const summarySlice = createSlice({
     },
     removeSummary: (state, action) => {
       state.summaries = state.summaries.filter(
-        summary => summary.videoId !== action.payload
+        (summary) => summary.videoId !== action.payload
       );
     },
     setWebSocketConnected: (state, action) => {
       state.isWebSocketConnected = action.payload;
     },
     setWebSocketSummary: (state, action) => {
-      state.webSocketSummary = action.payload;
+      const { videoId, summary } = action.payload;
+
+      if (state.currentSummary && state.currentSummary.videoId === videoId) {
+        state.currentSummary.summary = summary;
+        state.currentSummary.thumbnailUrl =
+          state.currentSummary.thumbnailUrl || `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+      }
     },
   },
 });
