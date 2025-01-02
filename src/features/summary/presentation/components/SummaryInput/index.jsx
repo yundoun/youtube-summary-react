@@ -9,6 +9,7 @@ import {
 } from '../../../infrastructure/store/summarySlice';
 import { Summary } from '../../../domain/entities/Summary';
 import { summaryApi } from '../../../infrastructure/services/api';
+import { summaryStorageService } from '../../../infrastructure/services/summaryStorageService';
 
 export const SummaryInput = () => {
   const [url, setUrl] = useState('');
@@ -40,6 +41,9 @@ export const SummaryInput = () => {
         summaryInfo.script,
         summaryInfo.status || 'pending'
       );
+
+      // 로컬 저장소에 저장
+      await summaryStorageService.saveSummary(summaryInstance);
 
       // Redux store에 저장
       dispatch(setCurrentSummary(summaryInstance.toPlainObject()));
