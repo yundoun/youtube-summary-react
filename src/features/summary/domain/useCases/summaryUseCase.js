@@ -57,40 +57,29 @@ export const summaryUseCases = {
    * @returns {Summary} - 생성된 Summary 객체를 반환.
    */
   async createSummary(url, username = null) {
-    // 로딩 상태를 true로 설정
     store.dispatch(setLoading(true));
     try {
-      // 서버 API 호출하여 요약 생성
       const response = await summaryApi.createSummary(url, username);
+      const { videoId, title, summary, script, status } = response.data.summary_info;
 
-      // 응답 데이터에서 요약 정보를 추출
-      const { videoId, title, summary, script } = response.data.summary_info;
+      // Summary 인스턴스 생성 시 title 포함
+      const summaryInstance = new Summary(
+        videoId,
+        title,  // title 추가
+        summary,
+        script,
+        status || 'pending'
+      );
 
-      // Summary 객체 생성
-      const summaryInstance = new Summary(videoId, title, summary, script);
-
-      // 생성된 Summary 객체를 로컬 저장소에 저장
+      // 로컬 저장소와 Redux store에 저장
       await summaryStorage.saveSummary(summaryInstance);
+      store.dispatch(setCurrentSummary(summaryInstance.toPlainObject()));
 
-      // 현재 생성된 요약 데이터를 Redux 상태에 저장
-      store.dispatch(setCurrentSummary(summaryInstance));
-
-      // 생성된 요약 객체 반환
       return summaryInstance;
     } catch (error) {
-      // 네트워크 오류 발생 시 로컬 저장소에서 요약 데이터를 가져옴
-      if (!navigator.onLine) {
-        const localSummaries = await summaryStorage.getAllSummaries();
-        const summaries = localSummaries.map(
-          item => new Summary(item.videoId, item.title, item.summary, item.script)
-        );
-        store.dispatch(setSummaries(summaries));
-      }
-
-      // 오류 메시지를 Redux 상태에 저장
       store.dispatch(setError(error.message));
+      throw error;
     } finally {
-      // 로딩 상태를 false로 설정
       store.dispatch(setLoading(false));
     }
   },

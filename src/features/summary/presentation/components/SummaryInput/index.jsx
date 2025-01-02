@@ -2,7 +2,13 @@ import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { extractVideoId } from '../../../../../core/utils/videoId';
-import { setLoading } from '../../../infrastructure/store/summarySlice';
+import {
+  setLoading,
+  setCurrentSummary,
+  setError,
+} from '../../../infrastructure/store/summarySlice';
+import { Summary } from '../../../domain/entities/Summary';
+import { summaryStorage } from '../../../../../core/storage/summaryStorage';
 
 export const SummaryInput = () => {
   const [url, setUrl] = useState('');
@@ -13,46 +19,49 @@ export const SummaryInput = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!url) {
-      console.warn('URL is empty!');
-      return;
-    }
+    if (!url) return;
 
     const videoId = extractVideoId(url);
-    if (!videoId) {
-      console.error('Invalid YouTube URL');
-      return;
-    }
+    if (!videoId) return;
 
     dispatch(setLoading(true));
-    setActiveVideoId(null); // 기존 연결 초기화
+    setActiveVideoId(null);
 
     try {
-      console.log('Sending POST request to /summary/content with URL:', url);
       const response = await fetch('/summary/content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url }),
       });
 
-      console.log('POST request response status:', response.status);
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(
-          'Server returned an error:',
-          response.status,
-          response.statusText,
-          errorText
-        );
-        dispatch(setLoading(false));
-      } else {
-        const responseData = await response.json();
-        console.log('POST request successful. Response data:', responseData);
-        // 약간의 지연 후 새 WebSocket 연결 설정
-        setTimeout(() => setActiveVideoId(videoId), 100);
+        throw new Error('Failed to create summary');
       }
+
+      const responseData = await response.json();
+      const summaryInfo = responseData.summary_info;
+
+      // POST 응답 데이터로 Summary 인스턴스 생성
+      const summaryInstance = new Summary(
+        summaryInfo.videoId,
+        summaryInfo.title,
+        summaryInfo.summary,
+        summaryInfo.script,
+        summaryInfo.status || 'pending'
+      );
+
+      // 로컬 저장소에 저장
+      await summaryStorage.saveSummary(summaryInstance);
+
+      // Redux store에 저장
+      dispatch(setCurrentSummary(summaryInstance.toPlainObject()));
+
+      // WebSocket 연결 설정
+      setTimeout(() => setActiveVideoId(videoId), 100);
     } catch (error) {
-      console.error('Error during POST request:', error);
+      console.error('Error during summary creation:', error);
+      dispatch(setError(error.message));
+    } finally {
       dispatch(setLoading(false));
     }
   };

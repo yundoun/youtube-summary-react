@@ -33,27 +33,47 @@ const summarySlice = createSlice({
      * - `summaries` 배열에서도 해당 비디오 ID가 존재하면 업데이트하고, 없으면 새로 추가.
      */
     setCurrentSummary: (state, action) => {
-      const { videoId, summary, thumbnailUrl, status } = action.payload;
+      const { videoId, _action, ...updates } = action.payload;
 
-      // 기본 썸네일 URL 생성
-      const generatedThumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+      if (_action === 'UPDATE_SUMMARY') {
+        // summary 필드만 업데이트
+        state.currentSummary = {
+          ...state.currentSummary,
+          summary: updates.summary,
+          status: updates.status
+        };
 
-      // 현재 요약 데이터 업데이트
-      state.currentSummary = {
-        videoId,
-        summary: summary || state.currentSummary?.summary || '', // 기존 요약 데이터 유지
-        thumbnailUrl: thumbnailUrl || generatedThumbnailUrl,     // 썸네일 URL 설정
-        status: status || state.currentSummary?.status || 'pending', // 기본 상태 'pending'
-      };
-
-      // summaries 배열 업데이트
-      const index = state.summaries.findIndex((s) => s.videoId === videoId);
-      if (index >= 0) {
-        // 기존 요약 데이터 업데이트
-        state.summaries[index] = state.currentSummary;
+        // summaries 배열도 같은 방식으로 업데이트
+        const index = state.summaries.findIndex((s) => s.videoId === videoId);
+        if (index >= 0) {
+          state.summaries[index] = {
+            ...state.summaries[index],
+            summary: updates.summary,
+            status: updates.status
+          };
+        }
+      } else if (_action === 'UPDATE_STATUS') {
+        // status만 업데이트
+        if (state.currentSummary) {
+          state.currentSummary.status = updates.status;
+        }
+        const index = state.summaries.findIndex((s) => s.videoId === videoId);
+        if (index >= 0) {
+          state.summaries[index].status = updates.status;
+        }
       } else {
-        // 새로운 요약 데이터 추가
-        state.summaries.push(state.currentSummary);
+        // 초기 설정 (POST 응답 처리)
+        state.currentSummary = {
+          videoId,
+          ...updates
+        };
+
+        const index = state.summaries.findIndex((s) => s.videoId === videoId);
+        if (index >= 0) {
+          state.summaries[index] = state.currentSummary;
+        } else {
+          state.summaries.push(state.currentSummary);
+        }
       }
     },
 

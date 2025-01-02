@@ -1,11 +1,9 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import webSocketService from '../../infrastructure/services/websocket';
-import { summaryUseCases } from '../../domain/useCases/summaryUseCase';
 import {
   setCurrentSummary,
   setWebSocketConnected,
-  setWebSocketSummary,
   setLoading,
 } from '../../infrastructure/store/summarySlice';
 
@@ -36,45 +34,38 @@ export const useWebSocket = (videoId) => {
 
       switch (type) {
         case 'summary':
-          // 'summary' 메시지를 처리 (요약 중간 데이터)
-          dispatch(setWebSocketSummary(data)); // WebSocket 요약 데이터를 Redux에 저장
-
-          // 현재 요약 데이터를 Redux에 업데이트
+          // summary 필드만 업데이트하고 나머지는 유지
           dispatch(
             setCurrentSummary({
               videoId,
-              summary: data, // 요약 데이터
-              thumbnailUrl: data.thumbnailUrl || '', // 썸네일 기본값 처리
-              status: 'in_progress', // 상태를 'in_progress'로 설정
+              summary: data,  // 요약 텍스트만 업데이트
+              status: 'in_progress',
+              _action: 'UPDATE_SUMMARY'  // 특수 플래그 추가
             })
           );
           break;
 
         case 'complete':
-          // 'complete' 메시지를 처리 (요약 완료)
+          // 상태만 업데이트
           dispatch(
             setCurrentSummary({
               videoId,
-              status: 'completed', // 상태를 'completed'로 설정
+              status: 'completed',
+              _action: 'UPDATE_STATUS'  // 특수 플래그 추가
             })
           );
 
-          // 전체 요약 목록을 갱신
-          summaryUseCases.fetchAllSummaries();
-
-          // WebSocket 연결 종료 처리
-          dispatch(setWebSocketConnected(false)); // 연결 상태를 false로 설정
-          dispatch(setLoading(false)); // 로딩 상태 해제
-          isConnected.current = false; // 연결 상태 플래그 초기화
-          webSocketService.close(); // WebSocket 연결 닫기
+          dispatch(setWebSocketConnected(false));
+          dispatch(setLoading(false));
+          isConnected.current = false;
+          webSocketService.close();
           break;
 
         default:
-          // 알 수 없는 메시지 타입 처리
           console.log('Unknown message type:', type);
       }
     },
-    [dispatch, videoId] // 의존성: dispatch와 videoId
+    [dispatch, videoId]
   );
 
   /**
