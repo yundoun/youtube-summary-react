@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import webSocketService from '../../infrastructure/services/websocket';
+import { summaryUseCases } from '../../domain/useCases/summaryUseCase';
 import {
   setCurrentSummary,
   setWebSocketConnected,
@@ -40,6 +41,9 @@ export const useWebSocket = (videoId) => {
               status: 'completed',
             })
           );
+
+          // 요약이 완료된 후 전체 목록 갱신
+          summaryUseCases.fetchAllSummaries();
 
           // WebSocket 연결 종료
           dispatch(setWebSocketConnected(false));
