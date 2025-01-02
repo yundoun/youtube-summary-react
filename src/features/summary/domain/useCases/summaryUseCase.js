@@ -89,24 +89,23 @@ export const summaryUseCases = {
    * - 로컬 저장소에 저장된 요약 데이터를 Redux 상태에 동기화.
    */
   async syncWithLocalStorage() {
-    // 로딩 상태를 true로 설정
     store.dispatch(setLoading(true));
     try {
       // 로컬 저장소에서 요약 데이터를 가져옴
       const summaries = await summaryStorage.getAllSummaries();
 
-      // 로컬 저장소 데이터를 Summary 객체로 변환
-      const transformedSummaries = summaries.map(
-        item => new Summary(item.videoId, item.title, item.summary, item.script)
+      // Summary 객체를 POJO로 변환
+      const transformedSummaries = summaries.map((item) =>
+        item.toPlainObject ? item.toPlainObject() : item
       );
 
-      // 변환된 데이터를 Redux 상태에 저장
+      // Redux 상태에 변환된 데이터 저장
       store.dispatch(setSummaries(transformedSummaries));
     } catch (error) {
       // 오류 발생 시 에러 메시지를 Redux 상태에 저장
       store.dispatch(setError(error.message));
+      console.error('Sync Error:', error);
     } finally {
-      // 로딩 상태를 false로 설정
       store.dispatch(setLoading(false));
     }
   },
@@ -131,6 +130,7 @@ export const summaryUseCases = {
 
       // Redux 상태에서 해당 요약 데이터를 제거
       store.dispatch(removeSummary(videoId));
+
     } catch (error) {
       // 오류 발생 시 에러 메시지를 Redux 상태에 저장
       store.dispatch(setError(error.message));
