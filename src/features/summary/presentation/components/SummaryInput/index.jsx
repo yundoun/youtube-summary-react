@@ -8,7 +8,7 @@ import {
   setError,
 } from '../../../infrastructure/store/summarySlice';
 import { Summary } from '../../../domain/entities/Summary';
-import { summaryStorage } from '../../../../../core/storage/summaryStorage';
+import { summaryApi } from '../../../infrastructure/services/api';
 
 export const SummaryInput = () => {
   const [url, setUrl] = useState('');
@@ -28,17 +28,8 @@ export const SummaryInput = () => {
     setActiveVideoId(null);
 
     try {
-      const response = await fetch('/summary/content', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create summary');
-      }
-
-      const responseData = await response.json();
+      const response = await summaryApi.createSummary(url);
+      const responseData = response.data;
       const summaryInfo = responseData.summary_info;
 
       // POST 응답 데이터로 Summary 인스턴스 생성
@@ -49,9 +40,6 @@ export const SummaryInput = () => {
         summaryInfo.script,
         summaryInfo.status || 'pending'
       );
-
-      // 로컬 저장소에 저장
-      await summaryStorage.saveSummary(summaryInstance);
 
       // Redux store에 저장
       dispatch(setCurrentSummary(summaryInstance.toPlainObject()));
