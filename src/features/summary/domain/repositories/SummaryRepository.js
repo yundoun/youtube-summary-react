@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 // src/features/summary/domain/repositories/SummaryRepository.js
 
 /**

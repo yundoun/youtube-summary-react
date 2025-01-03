@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 
 /**
  * WebSocket 통신을 위한 repository 인터페이스
