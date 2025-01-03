@@ -11,6 +11,7 @@ export const useSummary = () => {
 
   const fetchAllSummaries = useCallback(async (...args) => {
     dispatch(setLoading(true));
+    console.log("fetchAllSummaries 실행 : useSummary")
     try {
       const data = await summaryRepository.getSummaryAll(...args);
       dispatch(setSummaries(data));

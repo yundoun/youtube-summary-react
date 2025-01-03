@@ -1,9 +1,7 @@
-// features/summary/domain/useCases/summaryUseCases.js
-
 import { Summary } from '../entities/Summary';
 import { SummaryRepositoryImpl } from '../../infrastructure/repositories/SummaryRepositoryImpl';
 import { syncService } from '../../infrastructure/services/syncService';
-import { webSocketService } from '../../infrastructure/services/websocket';
+import { webSocketService } from '../../infrastructure/repositories/WebSocketServiceImpl';
 import { store } from '../../../../store';
 import {
   setLoading,
@@ -22,14 +20,20 @@ export const summaryUseCases = {
    */
   async fetchAllSummaries(username) {
     store.dispatch(setLoading(true));
+    console.log('fetchAllSummaries 실행');
     try {
       // 서버와 로컬 데이터 동기화
       await syncService.syncWithServer(username);
 
       // 로컬 저장소에서 데이터 조회
       const summaries = await summaryRepository.getSummaryAll(username);
-      console.log("유스케이스에서 로컬 저장소 데이터 조회")
-      store.dispatch(setSummaries(summaries));
+
+      // Summary 인스턴스들을 plain objects로 변환
+      const plainSummaries = summaries.map((summary) =>
+        summary instanceof Summary ? summary.toPlainObject() : summary
+      );
+
+      store.dispatch(setSummaries(plainSummaries));
     } catch (error) {
       store.dispatch(setError(error.message));
     } finally {
@@ -45,7 +49,6 @@ export const summaryUseCases = {
   async createSummary(url, username) {
     store.dispatch(setLoading(true));
     try {
-      // syncService를 통해 서버 생성 및 로컬 저장
       const summary = await syncService.createSummary(url, username);
       await this.initializeWebSocket(summary.videoId);
       return summary;
@@ -96,10 +99,12 @@ export const summaryUseCases = {
       case 'summary':
         {
           const summaryData = {
-            ...data,
             videoId,
-            status: 'in_progress'
+            summary: data,
+            status: 'in_progress',
+            _action: 'UPDATE_SUMMARY', // Redux 상태를 업데이트하기 위한 플래그
           };
+          webSocketService.setLastSummaryData(videoId, summaryData);
           store.dispatch(setCurrentSummary(summaryData));
           break;
         }
@@ -110,14 +115,22 @@ export const summaryUseCases = {
           if (lastSummaryData) {
             const summary = new Summary(
               videoId,
-              lastSummaryData.title,
+              lastSummaryData.title || 'Untitled Video',
               lastSummaryData.summary,
-              lastSummaryData.script,
+              lastSummaryData.script || [],
               'completed'
             );
-            store.dispatch(setCurrentSummary(summary));
-            // 완료된 요약을 로컬에 저장
-            summaryRepository.createSummary(summary);
+
+            const plainSummary = summary.toPlainObject();
+            store.dispatch(
+              setCurrentSummary({
+                ...plainSummary,
+                _action: 'UPDATE_SUMMARY',
+              })
+            );
+
+            // 로컬 스토리지에 저장
+            summaryRepository.updateSummary(plainSummary);
           }
           break;
         }
@@ -146,5 +159,5 @@ export const summaryUseCases = {
    */
   cleanupWebSocket() {
     webSocketService.disconnect();
-  }
+  },
 };
