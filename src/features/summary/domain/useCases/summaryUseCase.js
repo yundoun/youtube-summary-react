@@ -3,15 +3,9 @@ import { store } from '../../../../store';
 import webSocketService from '../../infrastructure/repositories/WebSocketServiceImpl';
 import { setLoading, setCurrentSummary, setError } from '../../infrastructure/store/summarySlice';
 
-// SummaryRepositoryImpl 인스턴스 생성
 const summaryRepository = new SummaryRepositoryImpl();
 
 export const summaryUseCases = {
-  /**
-   * 모든 요약 데이터 가져오기
-   * @param {string} [username] - 선택적 사용자명
-   * @returns {Promise<Array>}
-   */
   async getSummaryAll(username) {
     try {
       const summaries = await summaryRepository.getSummaryAll(username);
@@ -23,11 +17,6 @@ export const summaryUseCases = {
     }
   },
 
-  /**
-   * 단일 요약 데이터 가져오기
-   * @param {string} videoId - 비디오 ID
-   * @returns {Promise<Object>}
-   */
   async getSummary(videoId) {
     try {
       const summary = await summaryRepository.getSummary(videoId);
@@ -39,12 +28,6 @@ export const summaryUseCases = {
     }
   },
 
-  /**
-   * 새로운 요약 생성
-   * @param {string} url - YouTube URL
-   * @param {string} [username] - 선택적 사용자명
-   * @returns {Promise<Object>}
-   */
   async createSummary(url, username) {
     try {
       const summary = await summaryRepository.createSummary(url, username);
@@ -56,11 +39,6 @@ export const summaryUseCases = {
     }
   },
 
-  /**
-   * 요약 데이터 삭제
-   * @param {string} videoId - 삭제할 비디오 ID
-   * @param {string} [username] - 선택적 사용자명
-   */
   async deleteSummary(videoId, username) {
     try {
       await summaryRepository.deleteSummary(videoId, username);
@@ -80,15 +58,20 @@ export const summaryUseCases = {
   handleWebSocketMessage(videoId, type, data) {
     switch (type) {
       case 'summary':
+        // 진행 중인 요약 업데이트
         webSocketService.updateSummary(videoId, data, 'in_progress');
         break;
 
       case 'complete':
+        // 완료 상태 업데이트 (추가 GET 요청 제거)
+        const summaryData = {
+          videoId,
+          status: 'completed',
+          completedAt: new Date().toISOString()
+        };
         webSocketService.updateSummary(videoId, null, 'completed');
-        summaryRepository.getSummary(videoId).then(summary => {
-          const serializedSummary = summary.toPlainObject();
-          store.dispatch(setCurrentSummary(serializedSummary));
-        });
+        store.dispatch(setCurrentSummary(summaryData));
+        store.dispatch(setLoading(false));
         break;
 
       default:
@@ -101,19 +84,38 @@ export const summaryUseCases = {
    * @param {string} videoId - 비디오 ID
    */
   initializeWebSocket(videoId) {
-    if (!videoId) return;
+    if (!videoId) {
+      console.warn('No videoId provided for WebSocket initialization');
+      return;
+    }
 
+    // 기존 연결 정리
+    this.cleanupWebSocket();
+
+    // 새로운 연결 설정
     store.dispatch(setLoading(true));
-    webSocketService.connect(videoId);
-    webSocketService.setMessageHandler((type, data) =>
-      this.handleWebSocketMessage(videoId, type, data)
-    );
+
+    try {
+      webSocketService.connect(videoId);
+      webSocketService.setMessageHandler((type, data) => {
+        this.handleWebSocketMessage(videoId, type, data);
+      });
+    } catch (error) {
+      console.error('Error initializing WebSocket:', error);
+      store.dispatch(setError('WebSocket connection failed'));
+      store.dispatch(setLoading(false));
+    }
   },
 
   /**
    * WebSocket 연결 정리
    */
   cleanupWebSocket() {
-    webSocketService.disconnect();
+    try {
+      webSocketService.disconnect();
+      store.dispatch(setLoading(false));
+    } catch (error) {
+      console.error('Error cleaning up WebSocket:', error);
+    }
   }
 };

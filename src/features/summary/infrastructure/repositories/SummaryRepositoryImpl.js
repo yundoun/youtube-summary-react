@@ -2,7 +2,7 @@
 
 import { SummaryRepository } from '../../domain/repositories/SummaryRepository';
 import { Summary } from '../../domain/entities/Summary';
-import { summaryApi } from '../services/api';
+import { summaryHttpService } from '../services/summaryHttpService';
 
 /**
  * @implements {SummaryRepository}
@@ -13,7 +13,7 @@ export class SummaryRepositoryImpl extends SummaryRepository {
    * @returns {Promise<Summary[]>}
    */
   async getSummaryAll(username) {
-    const response = await summaryApi.getSummaryAll(username);
+    const response = await summaryHttpService.getSummaryAll(username);
     return response.data.summary_list.map(data => this.mapToSummary(data));
   }
 
@@ -22,7 +22,7 @@ export class SummaryRepositoryImpl extends SummaryRepository {
    * @returns {Promise<Summary>}
    */
   async getSummary(videoId) {
-    const response = await summaryApi.getSummary(videoId);
+    const response = await summaryHttpService.getSummary(videoId);
     return this.mapToSummary(response.data.summary_info);
   }
 
@@ -32,7 +32,7 @@ export class SummaryRepositoryImpl extends SummaryRepository {
    * @returns {Promise<Summary>}
    */
   async createSummary(url, username) {
-    const response = await summaryApi.createSummary(url, username);
+    const response = await summaryHttpService.createSummary(url, username);
     return this.mapToSummary(response.data.summary_info);
   }
 
@@ -42,7 +42,7 @@ export class SummaryRepositoryImpl extends SummaryRepository {
    * @returns {Promise<void>}
    */
   async deleteSummary(videoId, username) {
-    await summaryApi.deleteSummary(videoId, username);
+    await summaryHttpService.deleteSummary(videoId, username);
   }
 
   /**

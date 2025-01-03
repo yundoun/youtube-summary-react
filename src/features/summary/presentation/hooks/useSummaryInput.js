@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { extractVideoId } from '../../../../core/utils/videoId';
-import { summaryApi } from '../../infrastructure/services/api';
+import { summaryHttpService } from '../../infrastructure/services/summaryHttpService';
 import {
   setLoading,
   setCurrentSummary,
@@ -14,22 +14,42 @@ export const useSummaryInput = () => {
   const [activeVideoId, setActiveVideoId] = useState(null);
   const dispatch = useDispatch();
 
+  const resetState = useCallback(() => {
+    setUrl('');
+    setActiveVideoId(null);
+    dispatch(setLoading(false));
+  }, [dispatch]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!url) return;
 
+    // URL 유효성 검사
+    if (!url?.trim()) {
+      dispatch(setError('URL is required'));
+      return;
+    }
+
+    // 비디오 ID 추출
     const videoId = extractVideoId(url);
-    if (!videoId) return;
+    if (!videoId) {
+      dispatch(setError('Invalid YouTube URL'));
+      return;
+    }
 
-    dispatch(setLoading(true));
+    // 이전 상태 초기화
     setActiveVideoId(null);
+    dispatch(setLoading(true));
 
     try {
-      const response = await summaryApi.createSummary(url);
-      const responseData = response.data;
-      const summaryInfo = responseData.summary_info;
+      const response = await summaryHttpService.createSummary(url);
 
-      // POST 응답 데이터로 Summary 인스턴스 생성
+      if (!response?.data?.summary_info) {
+        throw new Error('Invalid response format');
+      }
+
+      const summaryInfo = response.data.summary_info;
+
+      // Summary 인스턴스 생성 및 상태 업데이트
       const summaryInstance = new Summary(
         summaryInfo.videoId,
         summaryInfo.title,
@@ -38,16 +58,15 @@ export const useSummaryInput = () => {
         summaryInfo.status || 'pending'
       );
 
-      // Redux store에 저장
       dispatch(setCurrentSummary(summaryInstance.toPlainObject()));
 
-      // WebSocket 연결 설정
-      setTimeout(() => setActiveVideoId(videoId), 100);
+      // WebSocket 연결을 위한 videoId 설정
+      setActiveVideoId(videoId);
+
     } catch (error) {
       console.error('Error during summary creation:', error);
-      dispatch(setError(error.message));
-    } finally {
-      dispatch(setLoading(false));
+      dispatch(setError(error.message || 'Failed to create summary'));
+      resetState();
     }
   };
 
@@ -56,5 +75,6 @@ export const useSummaryInput = () => {
     setUrl,
     handleSubmit,
     activeVideoId,
+    resetState,
   };
 };

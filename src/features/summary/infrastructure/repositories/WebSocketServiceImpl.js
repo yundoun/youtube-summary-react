@@ -1,5 +1,3 @@
-// src/features/summary/infrastructure/services/websocket.js
-
 import { WebSocketRepository } from '../../domain/repositories/WebSocketRepository';
 import { API_ENDPOINTS } from '../../../../core/utils/constants';
 import { store } from '../../../../store';
@@ -15,31 +13,34 @@ export class WebSocketServiceImpl extends WebSocketRepository {
     this.socket = null;
     this.messageHandler = null;
     this.isConnecting = false;
+    this.reconnectAttempts = 0;
+    this.maxReconnectAttempts = 3;
   }
 
-  /**
-   * WebSocket 연결 설정
-   * @param {string} videoId - 연결할 비디오 ID
-   */
   connect(videoId) {
-    if (this.isConnecting || this.socket?.readyState === WebSocket.OPEN) {
-      console.warn('WebSocket is already connected or connecting.');
+    // 이미 연결된 소켓이 있다면 먼저 정리
+    this.disconnect();
+
+    if (this.isConnecting) {
+      console.warn('WebSocket connection already in progress.');
       return;
     }
 
     this.isConnecting = true;
 
     try {
-      this.disconnect();
       this.socket = new WebSocket(API_ENDPOINTS.WS_SUMMARY);
 
       this.socket.onopen = () => {
         console.log('WebSocket Connected');
-        if (this.socket.readyState === WebSocket.OPEN) {
-          this.socket.send(videoId);
-        }
+        this.reconnectAttempts = 0;
         this.isConnecting = false;
         this.updateConnectionStatus(true);
+
+        // 연결 직후 videoId 전송
+        if (videoId) {
+          this.sendMessage(videoId);
+        }
       };
 
       this.socket.onmessage = (event) => {
@@ -50,47 +51,53 @@ export class WebSocketServiceImpl extends WebSocketRepository {
           if (this.messageHandler) {
             this.messageHandler(data.type, data.data);
           }
+
+          // 'complete' 메시지를 받으면 연결 종료
+          if (data.type === 'complete') {
+            this.disconnect();
+          }
         } catch (error) {
           console.error('Error processing WebSocket message:', error);
         }
       };
 
-      this.socket.onclose = () => {
-        console.log('WebSocket Disconnected');
-        this.messageHandler = null;
-        this.isConnecting = false;
-        this.updateConnectionStatus(false);
+      this.socket.onclose = (event) => {
+        console.log('WebSocket Disconnected:', event.code, event.reason);
+        this.cleanup();
       };
 
       this.socket.onerror = (error) => {
         console.error('WebSocket Error:', error);
-        this.isConnecting = false;
-        this.disconnect();
+        this.cleanup();
+
+        // 재연결 시도
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+          this.reconnectAttempts++;
+          setTimeout(() => this.connect(videoId), 1000 * this.reconnectAttempts);
+        }
       };
 
     } catch (error) {
       console.error('Error creating WebSocket connection:', error);
-      this.isConnecting = false;
+      this.cleanup();
     }
   }
 
-  /**
-   * WebSocket 연결 종료
-   */
-  disconnect() {
-    if (this.socket) {
-      this.socket.close();
-      this.socket = null;
-    }
+  cleanup() {
     this.messageHandler = null;
     this.isConnecting = false;
     this.updateConnectionStatus(false);
+    this.socket = null;
   }
 
-  /**
-   * WebSocket 연결 상태 업데이트 및 Redux store 갱신
-   * @param {boolean} status - 연결 상태
-   */
+  disconnect() {
+    if (this.socket) {
+      // 정상적인 종료 코드와 이유 전달
+      this.socket.close(1000, 'Normal closure');
+      this.cleanup();
+    }
+  }
+
   updateConnectionStatus(status) {
     store.dispatch(setWebSocketConnected(status));
     if (!status) {
@@ -98,43 +105,32 @@ export class WebSocketServiceImpl extends WebSocketRepository {
     }
   }
 
-  /**
-   * 요약 데이터 업데이트 및 Redux store 갱신
-   * @param {string} videoId - 비디오 ID
-   * @param {string} summary - 요약 텍스트
-   * @param {string} status - 상태 ('in_progress' | 'completed')
-   */
   updateSummary(videoId, summary, status) {
-    store.dispatch(
-      setCurrentSummary({
-        videoId,
-        summary,
-        status,
-        _action: status === 'completed' ? 'UPDATE_STATUS' : 'UPDATE_SUMMARY'
-      })
-    );
+    // 상태 업데이트 로직 개선
+    const updateData = {
+      videoId,
+      summary,
+      status,
+      _action: status === 'completed' ? 'UPDATE_STATUS' : 'UPDATE_SUMMARY',
+      updatedAt: new Date().toISOString()
+    };
+
+    store.dispatch(setCurrentSummary(updateData));
+
+    // completed 상태에서 자동 연결 종료
+    if (status === 'completed') {
+      this.disconnect();
+    }
   }
 
-  /**
-   * 메시지 핸들러 설정
-   * @param {Function} handler - 메시지 처리 콜백 함수
-   */
   setMessageHandler(handler) {
     this.messageHandler = handler;
   }
 
-  /**
-   * WebSocket 연결 상태 확인
-   * @returns {boolean}
-   */
   isConnected() {
     return this.socket?.readyState === WebSocket.OPEN;
   }
 
-  /**
-   * WebSocket을 통한 메시지 전송
-   * @param {string} message 
-   */
   sendMessage(message) {
     if (this.isConnected()) {
       this.socket.send(message);
@@ -144,5 +140,4 @@ export class WebSocketServiceImpl extends WebSocketRepository {
   }
 }
 
-// 싱글톤 인스턴스 생성 및 내보내기
 export default new WebSocketServiceImpl();
