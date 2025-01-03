@@ -1,9 +1,13 @@
-// src/features/summary/presentation/hooks/useSummary.js
-
+import { useCallback, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { SummaryRepositoryImpl } from '../../infrastructure/repositories/SummaryRepositoryImpl';
 import { extractVideoId } from '../../../../core/utils/videoId';
-import { setSummaries, setLoading, setError } from '../../infrastructure/store/summarySlice';
+import {
+  setSummaries,
+  setLoading,
+  setError,
+  clearCurrentSummary
+} from '../../infrastructure/store/summarySlice';
 
 const summaryRepository = new SummaryRepositoryImpl();
 
@@ -15,14 +19,12 @@ export const useSummary = () => {
     isLoading,
     error,
     isWebSocketConnected,
-    webSocketScripts
   } = useSelector(state => state.summaryFeature.summary);
 
-  const fetchAllSummaries = async (...args) => {
+  const fetchAllSummaries = useCallback(async (username) => {
     dispatch(setLoading(true));
     try {
-      const data = await summaryRepository.getSummaryAll(...args);
-      // Summary 객체를 일반 객체로 변환
+      const data = await summaryRepository.getSummaryAll(username);
       const serializedData = data.map(summary => ({
         videoId: summary.videoId,
         title: summary.title,
@@ -34,31 +36,66 @@ export const useSummary = () => {
       }));
       dispatch(setSummaries(serializedData));
     } catch (error) {
+      console.error('Error fetching summaries:', error);
       dispatch(setError(error.message));
     } finally {
       dispatch(setLoading(false));
     }
-  };
+  }, [dispatch]);
 
-
-  // 나머지 메서드들도 비슷한 패턴으로 수정
-  const createSummary = async (url, username) => {
+  const createSummary = useCallback(async (url, username) => {
     const videoId = extractVideoId(url);
-    if (!videoId) throw new Error('Invalid YouTube URL');
+    if (!videoId) {
+      dispatch(setError('Invalid YouTube URL'));
+      return null;
+    }
+
     dispatch(setLoading(true));
+    dispatch(clearCurrentSummary());
+
     try {
       const data = await summaryRepository.createSummary(url, username);
       return data;
     } catch (error) {
+      console.error('Error creating summary:', error);
       dispatch(setError(error.message));
-      throw error;
+      return null;
     } finally {
       dispatch(setLoading(false));
     }
-  };
+  }, [dispatch]);
 
-  const fetchSummary = (...args) => summaryRepository.getSummary(...args);
-  const deleteSummary = (...args) => summaryRepository.deleteSummary(...args);
+  const fetchSummary = useCallback(async (videoId) => {
+    if (!videoId) return null;
+
+    try {
+      return await summaryRepository.getSummary(videoId);
+    } catch (error) {
+      console.error('Error fetching summary:', error);
+      dispatch(setError(error.message));
+      return null;
+    }
+  }, [dispatch]);
+
+  const deleteSummary = useCallback(async (videoId, username) => {
+    if (!videoId) return;
+
+    try {
+      await summaryRepository.deleteSummary(videoId, username);
+      // 성공적으로 삭제 후 목록 새로고침
+      await fetchAllSummaries(username);
+    } catch (error) {
+      console.error('Error deleting summary:', error);
+      dispatch(setError(error.message));
+    }
+  }, [dispatch, fetchAllSummaries]);
+
+  // 현재 요약이 완료되면 목록 자동 업데이트
+  useEffect(() => {
+    if (currentSummary?.status === 'completed') {
+      fetchAllSummaries();
+    }
+  }, [currentSummary?.status, fetchAllSummaries]);
 
   return {
     summaries,
@@ -66,7 +103,6 @@ export const useSummary = () => {
     isLoading,
     error,
     isWebSocketConnected,
-    webSocketScripts,
     createSummary,
     fetchAllSummaries,
     fetchSummary,

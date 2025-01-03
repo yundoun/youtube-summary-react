@@ -1,26 +1,40 @@
-// src/features/summary/presentation/hooks/useWebSocket.js
-
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
+import { useDispatch } from 'react-redux';
 import { summaryUseCases } from '../../../summary/domain/useCases/summaryUseCase';
+import { setLoading } from '../../infrastructure/store/summarySlice';
 
 /**
- * Custom Hook: useWebSocket
  * WebSocket 연결을 관리하는 React Hook
- * summaryUseCases를 통해 WebSocket 로직을 처리
- * 
  * @param {string} videoId - WebSocket 연결을 위한 비디오 ID
  */
 export const useWebSocket = (videoId) => {
+  const dispatch = useDispatch();
+
+  // WebSocket 연결 정리를 위한 cleanup 함수
+  const cleanup = useCallback(() => {
+    summaryUseCases.cleanupWebSocket();
+    dispatch(setLoading(false));
+  }, [dispatch]);
+
   useEffect(() => {
-    // videoId가 없으면 연결하지 않음
-    if (!videoId) return;
+    if (!videoId) {
+      cleanup();
+      return;
+    }
 
     // WebSocket 초기화 및 연결
-    summaryUseCases.initializeWebSocket(videoId);
+    try {
+      console.log('Initializing WebSocket connection for videoId:', videoId);
+      summaryUseCases.initializeWebSocket(videoId);
+    } catch (error) {
+      console.error('Error initializing WebSocket:', error);
+      dispatch(setLoading(false));
+    }
 
-    // Clean up: WebSocket 연결 정리
+    // Cleanup 함수 반환
     return () => {
-      summaryUseCases.cleanupWebSocket();
+      console.log('Cleaning up WebSocket connection for videoId:', videoId);
+      cleanup();
     };
-  }, [videoId]); // videoId가 변경될 때만 실행
+  }, [videoId, cleanup, dispatch]);
 };
