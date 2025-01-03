@@ -144,32 +144,6 @@ export class WebSocketServiceImpl extends WebSocketRepository {
       console.warn('WebSocket is not connected');
     }
   }
-
-  /**
-  * 마지막 요약 데이터 저장
-  * @param {string} videoId 
-  * @param {object} data 
-  */
-  setLastSummaryData(videoId, data) {
-    this.lastSummaryData.set(videoId, data);
-  }
-
-  /**
-   * 마지막 요약 데이터 조회
-   * @param {string} videoId 
-   * @returns {object|undefined}
-   */
-  getLastSummaryData(videoId) {
-    return this.lastSummaryData.get(videoId);
-  }
-
-  /**
-   * 마지막 요약 데이터 삭제
-   * @param {string} videoId 
-   */
-  clearLastSummaryData(videoId) {
-    this.lastSummaryData.delete(videoId);
-  }
 }
 
 // 싱글톤 인스턴스 생성

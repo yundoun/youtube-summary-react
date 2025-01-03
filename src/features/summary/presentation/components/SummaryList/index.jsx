@@ -9,7 +9,6 @@ export const SummaryList = () => {
   );
 
   useEffect(() => {
-    console.log('fetchAllSummaries 실행: SummaryList');
     fetchAllSummaries();
   }, [fetchAllSummaries]);
 
