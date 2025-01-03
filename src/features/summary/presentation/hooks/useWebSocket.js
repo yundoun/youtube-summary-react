@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
-import { summaryUseCases } from '../../../summary/domain/useCases/summaryUseCase';
+import { dependencyContainer } from '../../infrastructure/di/DependencyContainer';
 import { setLoading } from '../../infrastructure/store/summarySlice';
 
 /**
@@ -9,12 +9,13 @@ import { setLoading } from '../../infrastructure/store/summarySlice';
  */
 export const useWebSocket = (videoId) => {
   const dispatch = useDispatch();
+  const webSocketUseCases = dependencyContainer.getWebSocketUseCases();
 
   // WebSocket 연결 정리를 위한 cleanup 함수
   const cleanup = useCallback(() => {
-    summaryUseCases.cleanupWebSocket();
+    webSocketUseCases.cleanup();
     dispatch(setLoading(false));
-  }, [dispatch]);
+  }, [dispatch, webSocketUseCases]);
 
   useEffect(() => {
     if (!videoId) {
@@ -25,7 +26,7 @@ export const useWebSocket = (videoId) => {
     // WebSocket 초기화 및 연결
     try {
       console.log('Initializing WebSocket connection for videoId:', videoId);
-      summaryUseCases.initializeWebSocket(videoId);
+      webSocketUseCases.initialize(videoId);
     } catch (error) {
       console.error('Error initializing WebSocket:', error);
       dispatch(setLoading(false));
@@ -36,5 +37,5 @@ export const useWebSocket = (videoId) => {
       console.log('Cleaning up WebSocket connection for videoId:', videoId);
       cleanup();
     };
-  }, [videoId, cleanup, dispatch]);
+  }, [videoId, cleanup, dispatch, webSocketUseCases]);
 };

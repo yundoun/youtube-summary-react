@@ -1,63 +1,81 @@
-// src/features/summary/infrastructure/repositories/SummaryRepositoryImpl.js
-
 import { SummaryRepository } from '../../domain/repositories/SummaryRepository';
 import { Summary } from '../../domain/entities/Summary';
 import { summaryHttpService } from '../services/summaryHttpService';
 
-/**
- * @implements {SummaryRepository}
- */
 export class SummaryRepositoryImpl extends SummaryRepository {
-  /**
-   * @param {string} [username]
-   * @returns {Promise<Summary[]>}
-   */
+  constructor() {
+    super();
+    this.httpService = summaryHttpService;
+  }
+
   async getSummaryAll(username) {
-    const response = await summaryHttpService.getSummaryAll(username);
-    return response.data.summary_list.map(data => this.mapToSummary(data));
+    try {
+      const response = await this.httpService.getSummaryAll(username);
+
+      // API 응답 구조에 맞게 수정
+      const summaryList = response.summary_list || [];
+
+      return summaryList.map(summaryData => new Summary(
+        summaryData.videoId,
+        summaryData.title,
+        summaryData.summary,
+        summaryData.script,
+        summaryData.status,
+        summaryData.thumbnailUrl,
+        summaryData.created_at
+      ));
+    } catch (error) {
+      console.error('Error in SummaryRepositoryImpl.getSummaryAll:', error);
+      throw error;
+    }
   }
 
-  /**
-   * @param {string} videoId
-   * @returns {Promise<Summary>}
-   */
   async getSummary(videoId) {
-    const response = await summaryHttpService.getSummary(videoId);
-    return this.mapToSummary(response.data.summary_info);
+    try {
+      const response = await this.httpService.getSummary(videoId);
+      const summaryData = response.summary_info;
+
+      return new Summary(
+        summaryData.videoId,
+        summaryData.title,
+        summaryData.summary,
+        summaryData.script,
+        summaryData.status,
+        summaryData.thumbnailUrl,
+        summaryData.created_at
+      );
+    } catch (error) {
+      console.error('Error in SummaryRepositoryImpl.getSummary:', error);
+      throw error;
+    }
   }
 
-  /**
-   * @param {string} url
-   * @param {string} [username]
-   * @returns {Promise<Summary>}
-   */
   async createSummary(url, username) {
-    const response = await summaryHttpService.createSummary(url, username);
-    return this.mapToSummary(response.data.summary_info);
+    try {
+      const response = await this.httpService.createSummary(url, username);
+      const summaryData = response.summary_info;
+
+      return new Summary(
+        summaryData.videoId,
+        summaryData.title,
+        summaryData.summary,
+        summaryData.script,
+        summaryData.status,
+        summaryData.thumbnailUrl,
+        summaryData.created_at
+      );
+    } catch (error) {
+      console.error('Error in SummaryRepositoryImpl.createSummary:', error);
+      throw error;
+    }
   }
 
-  /**
-   * @param {string} videoId
-   * @param {string} [username]
-   * @returns {Promise<void>}
-   */
   async deleteSummary(videoId, username) {
-    await summaryHttpService.deleteSummary(videoId, username);
-  }
-
-  /**
-   * API 응답 데이터를 Summary 엔터티로 변환
-   * @private
-   * @param {Object} data
-   * @returns {Summary}
-   */
-  mapToSummary(data) {
-    return new Summary(
-      data.videoId,
-      data.title,
-      data.summary,
-      data.script,
-      data.status || 'pending'
-    );
+    try {
+      await this.httpService.deleteSummary(videoId, username);
+    } catch (error) {
+      console.error('Error in SummaryRepositoryImpl.deleteSummary:', error);
+      throw error;
+    }
   }
 }
