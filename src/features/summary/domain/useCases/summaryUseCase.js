@@ -1,26 +1,78 @@
-
 import { SummaryRepositoryImpl } from '../../infrastructure/repositories/SummaryRepositoryImpl';
-import { summaryApi } from '../../infrastructure/services/api';
 import { store } from '../../../../store';
-import webSocketService from '../../infrastructure/services/websocket';
-import {
-  setLoading,
-  setError,
-  setSummaries,
-  setCurrentSummary,
-  removeSummary,
-} from '../../infrastructure/store/summarySlice';
+import webSocketService from '../../infrastructure/repositories/WebSocketServiceImpl';
+import { setLoading, setCurrentSummary, setError } from '../../infrastructure/store/summarySlice';
 
 // SummaryRepositoryImpl 인스턴스 생성
 const summaryRepository = new SummaryRepositoryImpl();
 
-
 export const summaryUseCases = {
-  // ... 기존 코드 유지 ...
+  /**
+   * 모든 요약 데이터 가져오기
+   * @param {string} [username] - 선택적 사용자명
+   * @returns {Promise<Array>}
+   */
+  async getSummaryAll(username) {
+    try {
+      const summaries = await summaryRepository.getSummaryAll(username);
+      return summaries.map(summary => summary.toPlainObject());
+    } catch (error) {
+      console.error('Error in getSummaryAll:', error);
+      store.dispatch(setError(error.message));
+      throw error;
+    }
+  },
 
   /**
-   * handleWebSocketMessage:
-   * WebSocket으로부터 받은 메시지를 처리하는 메서드
+   * 단일 요약 데이터 가져오기
+   * @param {string} videoId - 비디오 ID
+   * @returns {Promise<Object>}
+   */
+  async getSummary(videoId) {
+    try {
+      const summary = await summaryRepository.getSummary(videoId);
+      return summary.toPlainObject();
+    } catch (error) {
+      console.error('Error in getSummary:', error);
+      store.dispatch(setError(error.message));
+      throw error;
+    }
+  },
+
+  /**
+   * 새로운 요약 생성
+   * @param {string} url - YouTube URL
+   * @param {string} [username] - 선택적 사용자명
+   * @returns {Promise<Object>}
+   */
+  async createSummary(url, username) {
+    try {
+      const summary = await summaryRepository.createSummary(url, username);
+      return summary.toPlainObject();
+    } catch (error) {
+      console.error('Error in createSummary:', error);
+      store.dispatch(setError(error.message));
+      throw error;
+    }
+  },
+
+  /**
+   * 요약 데이터 삭제
+   * @param {string} videoId - 삭제할 비디오 ID
+   * @param {string} [username] - 선택적 사용자명
+   */
+  async deleteSummary(videoId, username) {
+    try {
+      await summaryRepository.deleteSummary(videoId, username);
+    } catch (error) {
+      console.error('Error in deleteSummary:', error);
+      store.dispatch(setError(error.message));
+      throw error;
+    }
+  },
+
+  /**
+   * WebSocket 메시지 처리
    * @param {string} videoId - 비디오 ID
    * @param {string} type - 메시지 타입 ('summary' | 'complete')
    * @param {any} data - 메시지 데이터
@@ -33,17 +85,8 @@ export const summaryUseCases = {
 
       case 'complete':
         webSocketService.updateSummary(videoId, null, 'completed');
-        // summaryRepository를 호출하여 요약 데이터 가져오기
         summaryRepository.getSummary(videoId).then(summary => {
-          const serializedSummary = {
-            videoId: summary.videoId,
-            title: summary.title,
-            summary: summary.summary,
-            script: summary.script,
-            status: summary.status,
-            thumbnailUrl: summary.thumbnailUrl,
-            createdAt: summary.createdAt,
-          };
+          const serializedSummary = summary.toPlainObject();
           store.dispatch(setCurrentSummary(serializedSummary));
         });
         break;
@@ -54,8 +97,7 @@ export const summaryUseCases = {
   },
 
   /**
-   * initializeWebSocket:
-   * WebSocket 연결을 초기화하고 메시지 핸들러를 설정하는 메서드
+   * WebSocket 연결 초기화
    * @param {string} videoId - 비디오 ID
    */
   initializeWebSocket(videoId) {
@@ -63,15 +105,13 @@ export const summaryUseCases = {
 
     store.dispatch(setLoading(true));
     webSocketService.connect(videoId);
-    // 화살표 함수로 this 바인딩 문제 해결
     webSocketService.setMessageHandler((type, data) =>
       this.handleWebSocketMessage(videoId, type, data)
     );
   },
 
   /**
-   * cleanupWebSocket:
-   * WebSocket 연결을 정리하는 메서드
+   * WebSocket 연결 정리
    */
   cleanupWebSocket() {
     webSocketService.disconnect();
