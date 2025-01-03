@@ -1,9 +1,10 @@
 import client from '../../../../core/api/client';
 import { API_ENDPOINTS } from '../../../../core/utils/constants';
 
-export const summaryApi = {
+export const summaryHttpService = {
   getSummaryAll: async (username) => {
     const params = username ? { username } : {};
+    console.log("서버에서 데이터 가져옴")
     return client.get(API_ENDPOINTS.CONTENT_ALL, { params });
   },
 
