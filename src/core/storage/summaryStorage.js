@@ -59,9 +59,7 @@ export const summaryStorage = {
             title: summary.title,
             summary: summary.summary,
             script: summary.script,
-            status: summary.status,
-            created_at: summary.created_at,
-            thumbnailUrl: summary.thumbnailUrl
+            status: summary.status
           })
         )
       );

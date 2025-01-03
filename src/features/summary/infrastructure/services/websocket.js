@@ -15,9 +15,7 @@ export class WebSocketServiceImpl extends WebSocketRepository {
     this.socket = null;
     this.messageHandler = null;
     this.isConnecting = false;
-    this.lastSummaryData = new Map(); // 각 videoId별 마지막 요약 데이터 저장
   }
-
 
   /**
    * WebSocket 연결 설정
@@ -146,8 +144,5 @@ export class WebSocketServiceImpl extends WebSocketRepository {
   }
 }
 
-// 싱글톤 인스턴스 생성
-const webSocketServiceInstance = new WebSocketServiceImpl();
-
-// named export로 변경
-export const webSocketService = webSocketServiceInstance;
+// 싱글톤 인스턴스 생성 및 내보내기
+export default new WebSocketServiceImpl();

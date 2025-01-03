@@ -1,12 +1,14 @@
-
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { extractVideoId } from '../../../../core/utils/videoId';
-import { syncService } from '../../infrastructure/services/syncService';
+import { summaryApi } from '../../infrastructure/services/api';
+import { summaryStorageService } from '../../infrastructure/services/summaryStorageService';
 import {
   setLoading,
+  setCurrentSummary,
   setError,
 } from '../../infrastructure/store/summarySlice';
+import { Summary } from '../../domain/entities/Summary';
 
 export const useSummaryInput = () => {
   const [url, setUrl] = useState('');
@@ -24,11 +26,26 @@ export const useSummaryInput = () => {
     setActiveVideoId(null);
 
     try {
-      // syncService를 통해 요약 생성 및 동기화 처리
-      await syncService.createSummary(url);
+      const response = await summaryApi.createSummary(url);
+      const responseData = response.data;
+      const summaryInfo = responseData.summary_info;
 
-      // WebSocket 연결을 위한 videoId 설정
-      // setTimeout으로 비동기 처리를 보장
+      // POST 응답 데이터로 Summary 인스턴스 생성
+      const summaryInstance = new Summary(
+        summaryInfo.videoId,
+        summaryInfo.title,
+        summaryInfo.summary,
+        summaryInfo.script,
+        summaryInfo.status || 'pending'
+      );
+
+      // 로컬 저장소에 저장
+      await summaryStorageService.saveSummary(summaryInstance);
+
+      // Redux store에 저장
+      dispatch(setCurrentSummary(summaryInstance.toPlainObject()));
+
+      // WebSocket 연결 설정
       setTimeout(() => setActiveVideoId(videoId), 100);
     } catch (error) {
       console.error('Error during summary creation:', error);

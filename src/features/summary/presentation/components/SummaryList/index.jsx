@@ -1,21 +1,13 @@
 import { useEffect } from 'react';
-import { useSelector } from 'react-redux';
 import { useSummary } from '../../hooks/useSummary';
 
 export const SummaryList = () => {
-  const { fetchAllSummaries } = useSummary();
-  const { summaries, isLoading } = useSelector(
-    (state) => state.summaryFeature.summary
-  );
+  const { summaries, fetchAllSummaries, isLoading } = useSummary();
 
   useEffect(() => {
+    // 요약 데이터 가져오기
     fetchAllSummaries();
-  }, [fetchAllSummaries]);
-
-  // YouTube 썸네일 URL 생성 함수
-  const getYouTubeThumbnail = (videoId) => {
-    return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-  };
+  }, []);
 
   if (isLoading) {
     return (
@@ -25,7 +17,7 @@ export const SummaryList = () => {
     );
   }
 
-  if (!summaries || summaries.length === 0) {
+  if (summaries.length === 0) {
     return (
       <div className="text-center text-gray-500 mt-8">
         No summaries yet. Try adding a YouTube video!
@@ -38,16 +30,12 @@ export const SummaryList = () => {
       {summaries.map((summary) => (
         <div key={summary.videoId} className="border rounded-lg shadow p-4">
           <img
-            src={getYouTubeThumbnail(summary.videoId)}
+            src={summary.thumbnailUrl}
             alt={`${summary.title} thumbnail`}
-            className="w-full h-48 object-cover rounded-lg"
-            onError={(e) => {
-              // maxresdefault가 없는 경우 hqdefault로 폴백
-              e.target.src = `https://img.youtube.com/vi/${summary.videoId}/hqdefault.jpg`;
-            }}
+            className="w-full h-auto rounded-lg"
           />
-          <h3 className="mt-2 font-bold text-lg truncate">{summary.title}</h3>
-          <p className="mt-2 text-gray-600 line-clamp-3">{summary.summary}</p>
+          <h3 className="mt-2 font-bold text-lg">{summary.title}</h3>
+          <p className="mt-2 text-gray-600">{summary.summary}</p>
         </div>
       ))}
     </div>
