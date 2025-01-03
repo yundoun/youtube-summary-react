@@ -90,12 +90,6 @@ export const useSummary = () => {
     }
   }, [dispatch, fetchAllSummaries]);
 
-  // 현재 요약이 완료되면 목록 자동 업데이트
-  useEffect(() => {
-    if (currentSummary?.status === 'completed') {
-      fetchAllSummaries();
-    }
-  }, [currentSummary?.status, fetchAllSummaries]);
 
   return {
     summaries,
