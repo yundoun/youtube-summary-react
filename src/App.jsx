@@ -1,15 +1,15 @@
-import { SummaryInput } from './features/summary/presentation/components/SummaryInput/index.jsx';
-import { SummaryList } from './features/summary/presentation/components/SummaryList/index.jsx';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { HomePage } from './features/summary/presentation/pages/HomePage';
+import { DetailPage } from './features/summary/presentation/pages/DetailPage';
 
 function App() {
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">YouTube Summary</h1>
-      <SummaryInput />
-      <div className="mt-8">
-        <SummaryList />
-      </div>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/summary/:videoId" element={<DetailPage />} />
+      </Routes>
+    </Router>
   );
 }
 

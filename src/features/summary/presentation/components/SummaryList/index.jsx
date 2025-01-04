@@ -1,54 +1,78 @@
 /* eslint-disable react/prop-types */
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { useSummary } from '../../hooks/useSummary';
+import { Clock, ArrowUpRight } from 'lucide-react';
 
-const SummaryCard = ({ summary, isActive }) => {
+const SummaryCard = ({ summary }) => {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    navigate(`/summary/${summary.videoId}`);
+  };
+
   return (
     <div
-      className={`border rounded-lg shadow p-4 ${
-        isActive ? 'border-blue-500' : ''
-      }`}>
-      <img
-        src={summary.thumbnailUrl}
-        alt={`${summary.title} thumbnail`}
-        className="w-full h-auto rounded-lg"
-      />
-      <h3 className="mt-2 font-bold text-lg">{summary.title}</h3>
-      <div className="mt-2">
-        {summary.status === 'pending' || summary.status === 'in_progress' ? (
-          <div className="flex items-center space-x-2 text-blue-500">
-            <div className="animate-spin h-4 w-4 border-2 border-blue-500 rounded-full border-t-transparent" />
-            <span>
-              {summary.status === 'pending'
-                ? 'Waiting...'
-                : 'Generating summary...'}
+      onClick={handleClick}
+      className="bg-white rounded-2xl p-6 hover:shadow-lg transition-all duration-200 cursor-pointer group">
+      <div className="flex space-x-6">
+        {/* Thumbnail */}
+        <div className="relative w-64 aspect-video bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 group-hover:shadow-md transition-shadow">
+          <img
+            src={summary.thumbnailUrl}
+            alt={summary.title}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-200" />
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 space-y-4">
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center space-x-2">
+                <span className="px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded-full">
+                  {summary.status === 'completed' ? '완료' : '진행 중'}
+                </span>
+                <span className="text-sm text-gray-500">
+                  {new Date(summary.createdAt).toLocaleString()}
+                </span>
+              </div>
+              <h3 className="text-xl font-semibold group-hover:text-blue-600 transition-colors duration-200">
+                {summary.title}
+              </h3>
+            </div>
+            <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors duration-200" />
+          </div>
+
+          <p className="text-gray-600 line-clamp-2">
+            {summary.summary || '요약 생성 중...'}
+          </p>
+
+          <div className="flex items-center space-x-4 text-sm">
+            <div className="flex items-center text-gray-500">
+              <Clock className="w-4 h-4 mr-1" />
+              <span>원본 길이: {summary.duration || '불러오는 중'}</span>
+            </div>
+            <span className="text-blue-600">
+              읽는 시간: {summary.readTime || '2분'}
             </span>
           </div>
-        ) : (
-          <p className="text-gray-600">{summary.summary}</p>
-        )}
-      </div>
-      {summary.status === 'completed' && summary.createdAt && (
-        <div className="mt-2 text-sm text-gray-500">
-          Created at: {new Date(summary.createdAt).toLocaleString()}
         </div>
-      )}
+      </div>
     </div>
   );
 };
 
 export const SummaryList = () => {
-  const { summaries, currentSummary, fetchAllSummaries, isLoading } =
-    useSummary();
+  const { summaries, fetchAllSummaries, isLoading } = useSummary();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     console.log('SummaryList mounted, fetching summaries...');
     fetchAllSummaries();
   }, [fetchAllSummaries]);
-
-  useEffect(() => {
-    console.log('Current summaries state:', summaries);
-  }, [summaries]);
 
   if (isLoading && !summaries.length) {
     return (
@@ -59,25 +83,29 @@ export const SummaryList = () => {
   }
 
   if (!isLoading && !summaries.length) {
-    console.log('No summaries found');
     return (
       <div className="text-center text-gray-500 mt-8">
-        No summaries yet. Try adding a YouTube video!
+        아직 요약된 영상이 없습니다. YouTube 영상을 요약해보세요!
       </div>
     );
   }
 
-  console.log('Rendering summaries list:', summaries);
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {Array.isArray(summaries) &&
-        summaries.map((summary) => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h2 className="text-3xl font-bold">Latest Summaries</h2>
+          <p className="text-gray-600">최근에 요약된 콘텐츠를 확인하세요</p>
+        </div>
+      </div>
+      <div className="grid gap-6">
+        {summaries.map((summary) => (
           <SummaryCard
             key={`${summary.videoId}-${summary.status}`}
             summary={summary}
-            isActive={currentSummary?.videoId === summary.videoId}
           />
         ))}
+      </div>
     </div>
   );
 };

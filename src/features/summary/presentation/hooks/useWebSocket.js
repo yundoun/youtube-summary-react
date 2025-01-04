@@ -1,7 +1,7 @@
 import { useEffect, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { dependencyContainer } from '../../infrastructure/di/DependencyContainer';
-import { setLoading } from '../../infrastructure/store/summarySlice';
+import { setLoading } from '../../aplication/store/summarySlice';
 
 /**
  * WebSocket 연결을 관리하는 React Hook

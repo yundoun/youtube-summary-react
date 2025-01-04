@@ -1,4 +1,30 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { dependencyContainer } from '../../infrastructure/di/DependencyContainer';
+
+const summaryUseCases = dependencyContainer.getSummaryUseCases();
+
+// Async Thunk 추가
+export const fetchSelectedSummary = createAsyncThunk(
+  'summary/fetchSelectedSummary',
+  async (videoId, { getState, dispatch }) => {
+    const { summaries } = getState().summaryFeature.summary;
+    // 먼저 existing summaries에서 찾기
+    const existingSummary = summaries.find(s => s.videoId === videoId);
+    if (existingSummary) {
+      return existingSummary;
+    }
+    // 없으면 API에서 가져오기
+    try {
+      dispatch(setLoading(true));
+      const summary = await summaryUseCases.getSummary(videoId);
+      return summary;
+    } catch (error) {
+      throw new Error(error.message);
+    } finally {
+      dispatch(setLoading(false));
+    }
+  }
+);
 
 const initialState = {
   summaries: [],
@@ -6,12 +32,21 @@ const initialState = {
   isLoading: false,
   error: null,
   isWebSocketConnected: false,
+  // 새로운 상태 추가
+  processStatus: {
+    currentStep: 0, // 0: 초기, 1: 스크립트 추출, 2: AI 분석, 3: 요약 생성
+    isProcessing: false,
+    processError: null
+  },
+  // 상세 페이지를 위한 상태
+  selectedSummary: null
 };
 
 const summarySlice = createSlice({
   name: 'summary',
   initialState,
   reducers: {
+    // 기존 리듀서들 유지
     setSummaries: (state, action) => {
       state.summaries = action.payload.map((summary) =>
         summary.toPlainObject ? summary.toPlainObject() : summary
@@ -21,12 +56,10 @@ const summarySlice = createSlice({
     setCurrentSummary: (state, action) => {
       const { videoId, status, summary, _action, ...rest } = action.payload;
 
-      // 현재 요약이 없거나 다른 비디오인 경우 새로 생성
       if (!state.currentSummary || state.currentSummary.videoId !== videoId) {
         const newSummary = { videoId, status, summary, ...rest };
         state.currentSummary = newSummary;
 
-        // summaries 배열에도 추가
         const index = state.summaries.findIndex(s => s.videoId === videoId);
         if (index >= 0) {
           state.summaries[index] = newSummary;
@@ -36,7 +69,6 @@ const summarySlice = createSlice({
         return;
       }
 
-      // 기존 요약 업데이트
       switch (_action) {
         case 'UPDATE_SUMMARY':
           state.currentSummary = {
@@ -52,7 +84,6 @@ const summarySlice = createSlice({
             ...state.currentSummary,
             status,
             ...rest,
-            // summary가 있는 경우에만 업데이트
             ...(summary && { summary })
           };
           break;
@@ -64,7 +95,6 @@ const summarySlice = createSlice({
           };
       }
 
-      // summaries 배열도 업데이트
       const index = state.summaries.findIndex(s => s.videoId === videoId);
       if (index >= 0) {
         state.summaries[index] = state.currentSummary;
@@ -73,6 +103,73 @@ const summarySlice = createSlice({
       }
     },
 
+    // 프로세스 상태 관리를 위한 새로운 리듀서들
+    setProcessStep: (state, action) => {
+      state.processStatus.currentStep = action.payload;
+    },
+
+    startProcessing: (state) => {
+      state.processStatus.isProcessing = true;
+      state.processStatus.currentStep = 1;
+      state.processStatus.processError = null;
+    },
+
+    finishProcessing: (state) => {
+      state.processStatus.isProcessing = false;
+      state.processStatus.currentStep = 0;
+    },
+
+    setProcessError: (state, action) => {
+      state.processStatus.processError = action.payload;
+      state.processStatus.isProcessing = false;
+    },
+
+    // 상세 페이지를 위한 새로운 리듀서들
+    setSelectedSummary: (state, action) => {
+      const summary = action.payload;
+      state.selectedSummary = summary;
+
+      // summaries 배열에도 추가/업데이트
+      const index = state.summaries.findIndex(s => s.videoId === summary.videoId);
+      if (index >= 0) {
+        state.summaries[index] = summary;
+      } else {
+        state.summaries.push(summary);
+      }
+    },
+    extraReducers: (builder) => {
+      builder
+        .addCase(fetchSelectedSummary.pending, (state) => {
+          state.isLoading = true;
+          state.error = null;
+        })
+        .addCase(fetchSelectedSummary.fulfilled, (state, action) => {
+          state.selectedSummary = action.payload;
+          state.isLoading = false;
+
+          // summaries 배열 업데이트
+          const index = state.summaries.findIndex(
+            s => s.videoId === action.payload.videoId
+          );
+          if (index >= 0) {
+            state.summaries[index] = action.payload;
+          } else {
+            state.summaries.push(action.payload);
+          }
+        })
+        .addCase(fetchSelectedSummary.rejected, (state, action) => {
+          state.isLoading = false;
+          state.error = action.error.message;
+          state.selectedSummary = null;
+        });
+    },
+
+
+    clearSelectedSummary: (state) => {
+      state.selectedSummary = null;
+    },
+
+    // 기존 리듀서들
     setLoading: (state, action) => {
       state.isLoading = action.payload;
     },
@@ -109,6 +206,13 @@ export const {
   removeSummary,
   setWebSocketConnected,
   clearCurrentSummary,
+  // 새로운 액션들 추가
+  setProcessStep,
+  startProcessing,
+  finishProcessing,
+  setProcessError,
+  setSelectedSummary,
+  clearSelectedSummary,
 } = summarySlice.actions;
 
 export default summarySlice.reducer;
