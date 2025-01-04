@@ -35,11 +35,31 @@ export class StateService {
   }
 
   handleSummaryCreated(summary) {
-    this.dispatch(setCurrentSummary(summary));
+    this.setLoading(true);
+    this.dispatch(setCurrentSummary({
+      ...summary,
+      _action: 'CREATE'
+    }));
   }
 
   handleSummaryUpdated(summary) {
-    this.dispatch(setCurrentSummary(summary));
+    const currentState = store.getState().summaryFeature.summary;
+    const currentSummary = currentState.currentSummary;
+
+    // status가 completed인 경우 이전 summary 데이터 보존
+    if (summary.status === 'completed' && currentSummary?.summary) {
+      this.dispatch(setCurrentSummary({
+        ...summary,
+        summary: currentSummary.summary,
+        _action: 'UPDATE_STATUS'
+      }));
+      this.setLoading(false);
+    } else {
+      this.dispatch(setCurrentSummary({
+        ...summary,
+        _action: summary.status === 'in_progress' ? 'UPDATE_SUMMARY' : 'UPDATE_STATUS'
+      }));
+    }
   }
 
   handleSummaryDeleted() {
@@ -53,11 +73,12 @@ export class StateService {
 
   handleWebSocketConnected() {
     this.dispatch(setWebSocketConnected(true));
+    this.setLoading(true);
   }
 
   handleWebSocketDisconnected() {
     this.dispatch(setWebSocketConnected(false));
-    this.setLoading(false);
+    // loading 상태는 summary complete 이벤트에서 처리하도록 변경
   }
 
   updateSummaries(summaries) {

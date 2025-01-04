@@ -21,41 +21,55 @@ const summarySlice = createSlice({
     setCurrentSummary: (state, action) => {
       const { videoId, status, summary, _action, ...rest } = action.payload;
 
-      // 현재 요약 업데이트
-      if (_action === 'UPDATE_SUMMARY') {
-        if (state.currentSummary?.videoId === videoId) {
-          state.currentSummary = {
-            ...state.currentSummary,
-            summary,
-            status: 'in_progress'
-          };
-        }
-      } else if (_action === 'UPDATE_STATUS') {
-        if (state.currentSummary?.videoId === videoId) {
-          state.currentSummary = {
-            ...state.currentSummary,
-            status: 'completed'
-          };
-          // 완료된 요약을 summaries 배열에 추가/업데이트
-          const index = state.summaries.findIndex(s => s.videoId === videoId);
-          if (index >= 0) {
-            state.summaries[index] = state.currentSummary;
-          } else {
-            state.summaries.unshift(state.currentSummary);
-          }
-        }
-      } else {
-        // 새로운 요약 생성
+      // 현재 요약이 없거나 다른 비디오인 경우 새로 생성
+      if (!state.currentSummary || state.currentSummary.videoId !== videoId) {
         const newSummary = { videoId, status, summary, ...rest };
         state.currentSummary = newSummary;
 
-        // 새 요약을 summaries 배열에 추가
+        // summaries 배열에도 추가
         const index = state.summaries.findIndex(s => s.videoId === videoId);
         if (index >= 0) {
           state.summaries[index] = newSummary;
         } else {
           state.summaries.unshift(newSummary);
         }
+        return;
+      }
+
+      // 기존 요약 업데이트
+      switch (_action) {
+        case 'UPDATE_SUMMARY':
+          state.currentSummary = {
+            ...state.currentSummary,
+            summary,
+            status: 'in_progress',
+            ...rest
+          };
+          break;
+
+        case 'UPDATE_STATUS':
+          state.currentSummary = {
+            ...state.currentSummary,
+            status,
+            ...rest,
+            // summary가 있는 경우에만 업데이트
+            ...(summary && { summary })
+          };
+          break;
+
+        default:
+          state.currentSummary = {
+            ...state.currentSummary,
+            ...action.payload
+          };
+      }
+
+      // summaries 배열도 업데이트
+      const index = state.summaries.findIndex(s => s.videoId === videoId);
+      if (index >= 0) {
+        state.summaries[index] = state.currentSummary;
+      } else {
+        state.summaries.unshift(state.currentSummary);
       }
     },
 

@@ -3,6 +3,7 @@ import { summaryEventEmitter, SummaryEvents } from '../events/SummaryEventEmitte
 export class WebSocketUseCases {
   constructor(webSocketRepository) {
     this.webSocketRepository = webSocketRepository;
+    this.summaryCache = new Map();  // videoId를 키로 하는 캐시 추가
   }
 
   /**
@@ -46,20 +47,31 @@ export class WebSocketUseCases {
 
     switch (type) {
       case 'summary':
-        summaryEventEmitter.emit(SummaryEvents.SUMMARY_UPDATED, {
-          videoId,
-          summary: data,
-          status: 'in_progress'
-        });
-        break;
+        {
+          const summaryData = {
+            videoId,
+            summary: data,
+            status: 'in_progress',
+            _action: 'UPDATE_SUMMARY'
+          };
+          this.summaryCache.set(videoId, summaryData);  // 캐시에 저장
+          summaryEventEmitter.emit(SummaryEvents.SUMMARY_UPDATED, summaryData);
+          break;
+        }
 
       case 'complete':
-        summaryEventEmitter.emit(SummaryEvents.SUMMARY_UPDATED, {
-          videoId,
-          status: 'completed',
-          completedAt: new Date().toISOString()
-        });
-        break;
+        {
+          const cachedSummary = this.summaryCache.get(videoId);
+          summaryEventEmitter.emit(SummaryEvents.SUMMARY_UPDATED, {
+            videoId,
+            status: 'completed',
+            completedAt: new Date().toISOString(),
+            _action: 'UPDATE_STATUS',
+            summary: cachedSummary?.summary  // 캐시된 summary 데이터 사용
+          });
+          this.summaryCache.delete(videoId);  // 캐시 정리
+          break;
+        }
 
       default:
         console.log('Unknown message type:', type);
@@ -72,6 +84,7 @@ export class WebSocketUseCases {
   cleanup() {
     try {
       this.webSocketRepository.disconnect();
+      this.summaryCache.clear();  // 캐시 정리 추가
       summaryEventEmitter.emit(SummaryEvents.WEBSOCKET_DISCONNECTED);
     } catch (error) {
       console.error('Error cleaning up WebSocket:', error);
