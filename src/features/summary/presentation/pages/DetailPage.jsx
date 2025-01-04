@@ -16,21 +16,27 @@ import {
 
 export const DetailPage = () => {
   const { videoId } = useParams();
+  console.log('Received videoId:', videoId);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // 상태 접근 경로 수정
-  // DetailPage.jsx 내부
-  const { selectedSummary, isLoading } = useSelector((state) => ({
-    selectedSummary: state.summaryFeature.summary.selectedSummary,
-    isLoading: state.summaryFeature.summary.isLoading,
-  }));
+  // Redux 상태를 개별적으로 가져오기
+  const selectedSummary = useSelector(
+    (state) => state.summaryFeature.summary.selectedSummary
+  );
+  const isLoading = useSelector(
+    (state) => state.summaryFeature.summary.isLoading
+  );
 
-  // 데이터 로딩 로직 개선
+  // 데이터 로딩 로직
   useEffect(() => {
     if (videoId) {
-      dispatch(fetchSelectedSummary(videoId)) // 1단계에서 만든 async thunk 사용
+      console.log('비디오 ID에 대한 요약을 가져오는 중:', videoId); // 로그 추가
+      dispatch(fetchSelectedSummary(videoId))
         .unwrap()
+        .then((data) => {
+          console.log('요약을 성공적으로 가져왔습니다:', data); // 로그 추가
+        })
         .catch((error) => {
           console.error('Failed to fetch summary:', error);
         });
@@ -50,6 +56,7 @@ export const DetailPage = () => {
 
   // 요약 정보가 없는 경우 처리
   if (!selectedSummary) {
+    console.log('selectedSummary is null or undefined:', selectedSummary);
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
         <p className="text-gray-600 mb-4">요약 정보를 찾을 수 없습니다.</p>

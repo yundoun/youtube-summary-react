@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { useSummary } from '../../hooks/useSummary';
 import { Clock, ArrowUpRight } from 'lucide-react';
 
@@ -67,11 +67,18 @@ const SummaryCard = ({ summary }) => {
 
 export const SummaryList = () => {
   const { summaries, fetchAllSummaries, isLoading } = useSummary();
-  const dispatch = useDispatch();
+
+  // summaries와 isLoading 상태 확인
+  console.log('Current summaries:', summaries);
+  console.log('Loading state:', isLoading);
 
   useEffect(() => {
     console.log('SummaryList mounted, fetching summaries...');
-    fetchAllSummaries();
+    fetchAllSummaries()
+      .then(() => console.log('Fetch all summaries completed successfully'))
+      .catch((error) =>
+        console.error('Error occurred while fetching summaries:', error)
+      );
   }, [fetchAllSummaries]);
 
   if (isLoading && !summaries.length) {
@@ -85,7 +92,7 @@ export const SummaryList = () => {
   if (!isLoading && !summaries.length) {
     return (
       <div className="text-center text-gray-500 mt-8">
-        아직 요약된 영상이 없습니다. YouTube 영상을 요약해보세요!
+        서버와의 연결이 종료되었습니다.
       </div>
     );
   }

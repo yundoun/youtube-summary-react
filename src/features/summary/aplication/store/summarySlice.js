@@ -46,11 +46,12 @@ const summarySlice = createSlice({
   name: 'summary',
   initialState,
   reducers: {
-    // 기존 리듀서들 유지
+
     setSummaries: (state, action) => {
-      state.summaries = action.payload.map((summary) =>
-        summary.toPlainObject ? summary.toPlainObject() : summary
-      );
+      state.summaries = action.payload.map((summary) => ({
+        ...summary,
+        ...(summary.toPlainObject ? summary.toPlainObject() : {}),
+      }));
     },
 
     setCurrentSummary: (state, action) => {
@@ -129,14 +130,18 @@ const summarySlice = createSlice({
       const summary = action.payload;
       state.selectedSummary = summary;
 
-      // summaries 배열에도 추가/업데이트
-      const index = state.summaries.findIndex(s => s.videoId === summary.videoId);
+      const index = state.summaries.findIndex(
+        (s) => s.videoId === summary.videoId
+      );
       if (index >= 0) {
+        // 기존 데이터를 업데이트
         state.summaries[index] = summary;
       } else {
-        state.summaries.push(summary);
+        // 새로운 데이터를 추가
+        state.summaries = [summary, ...state.summaries];
       }
     },
+
     extraReducers: (builder) => {
       builder
         .addCase(fetchSelectedSummary.pending, (state) => {
@@ -144,18 +149,18 @@ const summarySlice = createSlice({
           state.error = null;
         })
         .addCase(fetchSelectedSummary.fulfilled, (state, action) => {
+          console.log('선택된 요약을 가져왔습니다:', action.payload); // 로그 추가
           state.selectedSummary = action.payload;
-          state.isLoading = false;
 
-          // summaries 배열 업데이트
           const index = state.summaries.findIndex(
-            s => s.videoId === action.payload.videoId
+            (s) => s.videoId === action.payload.videoId
           );
           if (index >= 0) {
             state.summaries[index] = action.payload;
           } else {
-            state.summaries.push(action.payload);
+            state.summaries = [action.payload, ...state.summaries];
           }
+          state.isLoading = false;
         })
         .addCase(fetchSelectedSummary.rejected, (state, action) => {
           state.isLoading = false;
