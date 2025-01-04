@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { dependencyContainer } from '../../infrastructure/di/DependencyContainer';
-import { setLoading, setError, setSummaries } from '../../infrastructure/store/summarySlice';
+import { setLoading, setError, setSummaries } from '../../aplication/store/summarySlice';
 
 export const useSummary = () => {
   const dispatch = useDispatch();

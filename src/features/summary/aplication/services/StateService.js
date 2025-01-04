@@ -1,4 +1,4 @@
-import { store } from '../../../../store';
+import { store } from '../../../../application/store/rootStore';
 import {
   setWebSocketConnected,
   setCurrentSummary,

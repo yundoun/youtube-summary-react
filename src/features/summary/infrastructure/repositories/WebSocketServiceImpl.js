@@ -1,5 +1,5 @@
 import { WebSocketRepository } from '../../domain/repositories/WebSocketRepository';
-import { API_ENDPOINTS } from '../../../../core/utils/constants';
+import { API_ENDPOINTS } from '../../../../../core/utils/constants';
 
 export class WebSocketServiceImpl extends WebSocketRepository {
   constructor(stateService) {

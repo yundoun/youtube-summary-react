@@ -1,5 +1,5 @@
-import client from '../../../../core/api/client';
-import { API_ENDPOINTS } from '../../../../core/utils/constants';
+import client from '../../../../../core/api/client';
+import { API_ENDPOINTS } from '../../../../../core/utils/constants';
 
 export class SummaryHttpService {
   async getSummaryAll(username) {
