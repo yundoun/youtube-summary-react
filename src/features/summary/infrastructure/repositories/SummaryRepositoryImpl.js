@@ -1,64 +1,81 @@
-import { SummaryRepository } from '../../domain/repositories/summaryRepository';
-import { summaryApi } from '../services/api';
-import webSocketService from '../services/websocket';
+import { SummaryRepository } from '../../domain/repositories/SummaryRepository';
 import { Summary } from '../../domain/entities/Summary';
+import { summaryHttpService } from '../services/summaryHttpService';
 
 export class SummaryRepositoryImpl extends SummaryRepository {
-  async getSummaryAll(username) {
-    const response = await summaryApi.getSummaryAll(username);
-    const summaries = response.data.summary_list.map(data =>
-      new Summary(data.videoId, data.title, data.summary, data.script)
-    );
-
-    // 순수 객체로 변환
-    return summaries.map(summary => summary.toPlainObject());
+  constructor() {
+    super();
+    this.httpService = summaryHttpService;
   }
 
+  async getSummaryAll(username) {
+    try {
+      const response = await this.httpService.getSummaryAll(username);
+
+      // API 응답 구조에 맞게 수정
+      const summaryList = response.summary_list || [];
+
+      return summaryList.map(summaryData => new Summary(
+        summaryData.videoId,
+        summaryData.title,
+        summaryData.summary,
+        summaryData.script,
+        summaryData.status,
+        summaryData.thumbnailUrl,
+        summaryData.created_at
+      ));
+    } catch (error) {
+      console.error('Error in SummaryRepositoryImpl.getSummaryAll:', error);
+      throw error;
+    }
+  }
 
   async getSummary(videoId) {
-    const response = await summaryApi.getSummary(videoId);
-    const data = response.data.summary_info;
-    return new Summary(
-      data.videoId,
-      data.title,
-      data.summary,
-      data.script,
-      data.thumbnailUrl,
-      data.status
-    );
+    try {
+      const response = await this.httpService.getSummary(videoId);
+      const summaryData = response.summary_info;
+
+      return new Summary(
+        summaryData.videoId,
+        summaryData.title,
+        summaryData.summary,
+        summaryData.script,
+        summaryData.status,
+        summaryData.thumbnailUrl,
+        summaryData.created_at
+      );
+    } catch (error) {
+      console.error('Error in SummaryRepositoryImpl.getSummary:', error);
+      throw error;
+    }
   }
 
   async createSummary(url, username) {
-    const response = await summaryApi.createSummary(url, username);
-    const data = response.data.summary_info;
-    return new Summary(
-      data.videoId,
-      data.title,
-      data.summary,
-      data.script,
-      data.thumbnailUrl,
-      data.status
-    );
+    try {
+      const response = await this.httpService.createSummary(url, username);
+      const summaryData = response.summary_info;
+
+      return new Summary(
+        summaryData.videoId,
+        summaryData.title,
+        summaryData.summary,
+        summaryData.script,
+        summaryData.status,
+        summaryData.thumbnailUrl,
+        summaryData.created_at
+      );
+    } catch (error) {
+      console.error('Error in SummaryRepositoryImpl.createSummary:', error);
+      throw error;
+    }
   }
 
   async deleteSummary(videoId, username) {
-    return await summaryApi.deleteSummary(videoId, username);
-  }
-
-  connectWebSocket(callback) {
-    if (!callback) {
-      console.warn('Callback function is required to connect WebSocket.');
-      return;
+    try {
+      await this.httpService.deleteSummary(videoId, username);
+    } catch (error) {
+      console.error('Error in SummaryRepositoryImpl.deleteSummary:', error);
+      throw error;
     }
-    webSocketService.connect(callback);
-  }
-
-
-  sendWebSocketMessage(message) {
-    webSocketService.sendMessage(message);
-  }
-
-  closeWebSocket() {
-    webSocketService.close();
   }
 }
