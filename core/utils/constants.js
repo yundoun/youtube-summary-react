@@ -1,6 +1,6 @@
 export const API_ENDPOINTS = {
-  CONTENT: '/content',
-  CONTENT_ALL: '/content/all',
+  CONTENT: '/api/summary/content',
+  CONTENT_ALL: '/api/summary/content/all',
   WS_SUMMARY: 'ws://localhost:8000/summary/ws/summary',
   WS_PING: 'ws://localhost:8000/summary/ws/ping'
 };

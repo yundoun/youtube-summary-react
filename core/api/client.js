@@ -1,9 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000/summary';
-
 const client = axios.create({
-  baseURL: API_BASE_URL,
+  // baseURL 제거 (Vite 프록시가 처리)
   headers: {
     'Content-Type': 'application/json',
   },

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -12,17 +12,21 @@ import {
 import {
   fetchSelectedSummary,
   clearSelectedSummary,
+  setSelectedSummary,
 } from '../../../summary/aplication/store/summarySlice';
 
 export const DetailPage = () => {
   const { videoId } = useParams();
-  console.log('Received videoId:', videoId);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [error, setError] = useState(null);
 
   // Redux 상태를 개별적으로 가져오기
   const selectedSummary = useSelector(
     (state) => state.summaryFeature.summary.selectedSummary
+  );
+  const summaries = useSelector(
+    (state) => state.summaryFeature.summary.summaries
   );
   const isLoading = useSelector(
     (state) => state.summaryFeature.summary.isLoading
@@ -30,20 +34,51 @@ export const DetailPage = () => {
 
   // 데이터 로딩 로직
   useEffect(() => {
-    if (videoId) {
+    const loadSummary = async () => {
+      if (!videoId) return;
       console.log('비디오 ID에 대한 요약을 가져오는 중:', videoId); // 로그 추가
-      dispatch(fetchSelectedSummary(videoId))
-        .unwrap()
-        .then((data) => {
-          console.log('요약을 성공적으로 가져왔습니다:', data); // 로그 추가
-        })
-        .catch((error) => {
-          console.error('Failed to fetch summary:', error);
-        });
-    }
+      try {
+        // 먼저 existing summaries에서 찾기
+        const existingSummary = summaries.find((s) => s.videoId === videoId);
+        if (existingSummary) {
+          dispatch(setSelectedSummary(existingSummary));
+          console.log('요약을 성공적으로 가져왔습니다:', existingSummary); // 로그 추가
+          return;
+        }
 
-    return () => dispatch(clearSelectedSummary());
-  }, [videoId, dispatch]);
+        // API에서 데이터 가져오기
+        const result = await dispatch(fetchSelectedSummary(videoId)).unwrap();
+        if (result) {
+          dispatch(setSelectedSummary(result));
+        }
+      } catch (error) {
+        console.error('Failed to fetch summary:', error);
+        setError(error.message);
+      }
+    };
+
+    loadSummary();
+
+    // Cleanup function
+    return () => {
+      dispatch(clearSelectedSummary());
+    };
+  }, [videoId, dispatch, summaries]);
+
+  // 에러 상태 처리
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
+        <p className="text-red-600 mb-4">오류가 발생했습니다: {error}</p>
+        <button
+          onClick={() => navigate('/')}
+          className="text-blue-600 hover:text-blue-700 flex items-center">
+          <ArrowLeft className="w-5 h-5 mr-2" />
+          홈으로 돌아가기
+        </button>
+      </div>
+    );
+  }
 
   // 로딩 상태 처리
   if (isLoading) {
@@ -56,7 +91,6 @@ export const DetailPage = () => {
 
   // 요약 정보가 없는 경우 처리
   if (!selectedSummary) {
-    console.log('selectedSummary is null or undefined:', selectedSummary);
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
         <p className="text-gray-600 mb-4">요약 정보를 찾을 수 없습니다.</p>
@@ -142,9 +176,9 @@ export const DetailPage = () => {
           {/* 왼쪽: 요약 */}
           <div className="bg-white rounded-2xl p-8 shadow-sm">
             <h2 className="text-2xl font-bold mb-6">요약</h2>
-            <p className="text-gray-600 leading-relaxed">
+            <div className="text-gray-600 leading-relaxed whitespace-pre-wrap">
               {selectedSummary.summary}
-            </p>
+            </div>
           </div>
 
           {/* 오른쪽: 타임라인 */}
@@ -164,7 +198,7 @@ export const DetailPage = () => {
                       <h3 className="text-lg font-semibold">{item.title}</h3>
                     </div>
                     <ul className="list-disc list-inside text-gray-600 text-sm space-y-1">
-                      {item.points.map((point, idx) => (
+                      {item.points?.map((point, idx) => (
                         <li key={idx}>{point}</li>
                       ))}
                     </ul>

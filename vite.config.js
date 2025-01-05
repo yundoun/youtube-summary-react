@@ -5,11 +5,12 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/summary': {
-        target: 'http://localhost:8000', // 서버 주소
-        changeOrigin: true,            // 호스트 헤더 변경
-        secure: false                  // HTTPS가 아니더라도 허용
+      '/api/summary': {  // API 경로를 /api prefix로 분리
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api\/summary/, '/summary'),
       },
     },
   },
-})
+});

@@ -3,17 +3,14 @@ import { dependencyContainer } from '../../infrastructure/di/DependencyContainer
 
 const summaryUseCases = dependencyContainer.getSummaryUseCases();
 
-// Async Thunk 추가
 export const fetchSelectedSummary = createAsyncThunk(
   'summary/fetchSelectedSummary',
   async (videoId, { getState, dispatch }) => {
     const { summaries } = getState().summaryFeature.summary;
-    // 먼저 existing summaries에서 찾기
     const existingSummary = summaries.find(s => s.videoId === videoId);
     if (existingSummary) {
       return existingSummary;
     }
-    // 없으면 API에서 가져오기
     try {
       dispatch(setLoading(true));
       const summary = await summaryUseCases.getSummary(videoId);
@@ -32,13 +29,11 @@ const initialState = {
   isLoading: false,
   error: null,
   isWebSocketConnected: false,
-  // 새로운 상태 추가
   processStatus: {
-    currentStep: 0, // 0: 초기, 1: 스크립트 추출, 2: AI 분석, 3: 요약 생성
+    currentStep: 0,
     isProcessing: false,
     processError: null
   },
-  // 상세 페이지를 위한 상태
   selectedSummary: null
 };
 
@@ -46,7 +41,6 @@ const summarySlice = createSlice({
   name: 'summary',
   initialState,
   reducers: {
-
     setSummaries: (state, action) => {
       state.summaries = action.payload.map((summary) => ({
         ...summary,
@@ -104,7 +98,6 @@ const summarySlice = createSlice({
       }
     },
 
-    // 프로세스 상태 관리를 위한 새로운 리듀서들
     setProcessStep: (state, action) => {
       state.processStatus.currentStep = action.payload;
     },
@@ -125,7 +118,6 @@ const summarySlice = createSlice({
       state.processStatus.isProcessing = false;
     },
 
-    // 상세 페이지를 위한 새로운 리듀서들
     setSelectedSummary: (state, action) => {
       const summary = action.payload;
       state.selectedSummary = summary;
@@ -134,47 +126,16 @@ const summarySlice = createSlice({
         (s) => s.videoId === summary.videoId
       );
       if (index >= 0) {
-        // 기존 데이터를 업데이트
         state.summaries[index] = summary;
       } else {
-        // 새로운 데이터를 추가
         state.summaries = [summary, ...state.summaries];
       }
     },
-
-    extraReducers: (builder) => {
-      builder
-        .addCase(fetchSelectedSummary.pending, (state) => {
-          state.isLoading = true;
-          state.error = null;
-        })
-        .addCase(fetchSelectedSummary.fulfilled, (state, action) => {
-          console.log('선택된 요약을 가져왔습니다:', action.payload); // 로그 추가
-          state.selectedSummary = action.payload;
-
-          const index = state.summaries.findIndex(
-            (s) => s.videoId === action.payload.videoId
-          );
-          if (index >= 0) {
-            state.summaries[index] = action.payload;
-          } else {
-            state.summaries = [action.payload, ...state.summaries];
-          }
-          state.isLoading = false;
-        })
-        .addCase(fetchSelectedSummary.rejected, (state, action) => {
-          state.isLoading = false;
-          state.error = action.error.message;
-          state.selectedSummary = null;
-        });
-    },
-
 
     clearSelectedSummary: (state) => {
       state.selectedSummary = null;
     },
 
-    // 기존 리듀서들
     setLoading: (state, action) => {
       state.isLoading = action.payload;
     },
@@ -201,6 +162,33 @@ const summarySlice = createSlice({
       state.currentSummary = null;
     }
   },
+
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchSelectedSummary.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchSelectedSummary.fulfilled, (state, action) => {
+        console.log('선택된 요약을 가져왔습니다:', action.payload);
+        state.selectedSummary = action.payload;
+
+        const index = state.summaries.findIndex(
+          (s) => s.videoId === action.payload.videoId
+        );
+        if (index >= 0) {
+          state.summaries[index] = action.payload;
+        } else {
+          state.summaries = [action.payload, ...state.summaries];
+        }
+        state.isLoading = false;
+      })
+      .addCase(fetchSelectedSummary.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message;
+        state.selectedSummary = null;
+      });
+  }
 });
 
 export const {
@@ -211,7 +199,6 @@ export const {
   removeSummary,
   setWebSocketConnected,
   clearCurrentSummary,
-  // 새로운 액션들 추가
   setProcessStep,
   startProcessing,
   finishProcessing,
