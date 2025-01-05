@@ -73,11 +73,11 @@ export const SummaryList = () => {
   console.log('Loading state:', isLoading);
 
   useEffect(() => {
-    console.log('SummaryList mounted, fetching summaries...');
+    // console.log('SummaryList mounted, fetching summaries...');
     fetchAllSummaries()
-      .then(() => console.log('Fetch all summaries completed successfully'))
+      .then(() => console.log('모든 요약을 성공적으로 가져왔습니다'))
       .catch((error) =>
-        console.error('Error occurred while fetching summaries:', error)
+        console.error('요약을 가져오는 중 오류가 발생했습니다:', error)
       );
   }, [fetchAllSummaries]);
 

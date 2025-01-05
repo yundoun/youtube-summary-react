@@ -41,7 +41,7 @@ export const useSummary = () => {
       return handleAsyncState(async () => {
         console.log('Fetching summaries...');
         const data = await summaryUseCases.getSummaryAll(username);
-        console.log('Fetched data:', data);
+        // console.log('Fetched data:', data);
         dispatch(setSummaries(data));
       });
     },
