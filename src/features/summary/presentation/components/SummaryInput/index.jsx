@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { useSummaryInput } from '../../hooks/useSummaryInput';
 import {

@@ -1,12 +1,87 @@
 /* eslint-disable react/prop-types */
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
 import { useSummary } from '../../hooks/useSummary';
 import { Clock, ArrowUpRight } from 'lucide-react';
 
+const extractPreview = (summaryText) => {
+  if (!summaryText) return '요약 생성 중...';
+
+  // 특수문자 제거 및 정리
+  const cleanText = summaryText.replace(/[#*\[\]()]/g, '').trim();
+
+  // 전체 줄거리 요약 부분 추출
+  const summaryMatch = cleanText.match(
+    /전체 줄거리 요약(.*?)(?=타임라인 분석|주요 구간별 내용|$)/s
+  );
+
+  if (summaryMatch && summaryMatch[1]) {
+    // 전체 줄거리 요약에서 첫 3문장 추출
+    const sentences = summaryMatch[1]
+      .trim()
+      .split(/(?<=[.!?])\s+/)
+      .filter(Boolean)
+      .slice(0, 3);
+
+    return sentences.join(' ');
+  }
+
+  // 전체 줄거리 요약이 없는 경우 일반 텍스트에서 첫 3문장 추출
+  const sentences = cleanText
+    .split(/(?<=[.!?])\s+/)
+    .filter(Boolean)
+    .slice(0, 3);
+
+  return sentences.join(' ');
+};
+
+// script 속성에서 모든 텍스트 객체의 duration 값을 합산하여 계산
+const calculateDuration = (script) => {
+  if (!script) return null;
+
+  try {
+    const parsedScript = JSON.parse(script);
+    return parsedScript.reduce((total, segment) => total + segment.duration, 0);
+  } catch (error) {
+    console.error('스크립트 파싱 오류:', error);
+    return null;
+  }
+};
+
+//  readTime은 summary의 텍스트 길이에 따라 대략적인 읽기 시간을 계산합니다. 평균적인 사람의 읽기 속도를 200단어/분으로 가정
+const calculateReadTime = (summaryText) => {
+  if (!summaryText) return '2분';
+
+  const words = summaryText.split(/\s+/).length; // 단어 수 계산
+  const wordsPerMinute = 200; // 평균 읽기 속도 (단어/분)
+  const minutes = Math.ceil(words / wordsPerMinute);
+
+  return `${minutes}분`;
+};
+
+const formatDuration = (durationInSeconds) => {
+  if (!durationInSeconds) return '불러오는 중';
+
+  const hours = Math.floor(durationInSeconds / 3600);
+  const minutes = Math.floor((durationInSeconds % 3600) / 60);
+  const seconds = Math.floor(durationInSeconds % 60);
+
+  if (hours > 0) {
+    return `${hours}시간 ${minutes > 0 ? `${minutes}분` : ''}`;
+  } else if (minutes > 0) {
+    return `${minutes}분 ${seconds > 0 ? `${seconds}초` : ''}`;
+  } else {
+    return `${seconds}초`;
+  }
+};
+
 const SummaryCard = ({ summary }) => {
   const navigate = useNavigate();
+  const previewText = extractPreview(summary.summary);
+
+  const duration = calculateDuration(summary.script);
+  const formattedDuration = formatDuration(duration);
+  const readTime = calculateReadTime(summary.summary);
 
   const handleClick = () => {
     navigate(`/summary/${summary.videoId}`);
@@ -46,18 +121,14 @@ const SummaryCard = ({ summary }) => {
             <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors duration-200" />
           </div>
 
-          <p className="text-gray-600 line-clamp-2">
-            {summary.summary || '요약 생성 중...'}
-          </p>
+          <p className="text-gray-600 line-clamp-3">{previewText}</p>
 
           <div className="flex items-center space-x-4 text-sm">
             <div className="flex items-center text-gray-500">
               <Clock className="w-4 h-4 mr-1" />
-              <span>원본 길이: {summary.duration || '불러오는 중'}</span>
+              <span>원본 길이: {formattedDuration}</span>
             </div>
-            <span className="text-blue-600">
-              읽는 시간: {summary.readTime || '2분'}
-            </span>
+            <span className="text-blue-600">읽는 시간: {readTime}</span>
           </div>
         </div>
       </div>
