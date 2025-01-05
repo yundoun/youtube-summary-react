@@ -15,13 +15,20 @@ import {
   setSelectedSummary,
 } from '../../../summary/aplication/store/summarySlice';
 
+// 초를 MM:SS 형식으로 변환하는 함수
+const formatTime = (seconds) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
 export const DetailPage = () => {
   const { videoId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [error, setError] = useState(null);
+  const [parsedScript, setParsedScript] = useState([]);
 
-  // Redux 상태를 개별적으로 가져오기
   const selectedSummary = useSelector(
     (state) => state.summaryFeature.summary.selectedSummary
   );
@@ -32,21 +39,32 @@ export const DetailPage = () => {
     (state) => state.summaryFeature.summary.isLoading
   );
 
-  // 데이터 로딩 로직
+  // Parse script when selectedSummary changes
+  useEffect(() => {
+    if (selectedSummary?.script) {
+      try {
+        const scriptData =
+          typeof selectedSummary.script === 'string'
+            ? JSON.parse(selectedSummary.script)
+            : selectedSummary.script;
+        setParsedScript(scriptData);
+      } catch (e) {
+        console.error('Script parsing error:', e);
+        setParsedScript([]);
+      }
+    }
+  }, [selectedSummary]);
+
   useEffect(() => {
     const loadSummary = async () => {
       if (!videoId) return;
-      console.log('비디오 ID에 대한 요약을 가져오는 중:', videoId); // 로그 추가
       try {
-        // 먼저 existing summaries에서 찾기
         const existingSummary = summaries.find((s) => s.videoId === videoId);
         if (existingSummary) {
           dispatch(setSelectedSummary(existingSummary));
-          console.log('요약을 성공적으로 가져왔습니다:', existingSummary); // 로그 추가
           return;
         }
 
-        // API에서 데이터 가져오기
         const result = await dispatch(fetchSelectedSummary(videoId)).unwrap();
         if (result) {
           dispatch(setSelectedSummary(result));
@@ -59,13 +77,11 @@ export const DetailPage = () => {
 
     loadSummary();
 
-    // Cleanup function
     return () => {
       dispatch(clearSelectedSummary());
     };
   }, [videoId, dispatch, summaries]);
 
-  // 에러 상태 처리
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
@@ -80,7 +96,6 @@ export const DetailPage = () => {
     );
   }
 
-  // 로딩 상태 처리
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -89,7 +104,6 @@ export const DetailPage = () => {
     );
   }
 
-  // 요약 정보가 없는 경우 처리
   if (!selectedSummary) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
@@ -171,37 +185,31 @@ export const DetailPage = () => {
           </div>
         </div>
 
-        {/* 요약 및 타임라인 섹션 */}
+        {/* 요약 및 스크립트 섹션 */}
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* 왼쪽: 요약 */}
           <div className="bg-white rounded-2xl p-8 shadow-sm">
             <h2 className="text-2xl font-bold mb-6">요약</h2>
-            <div className="text-gray-600 leading-relaxed whitespace-pre-wrap">
-              {selectedSummary.summary}
+            <div className="prose max-w-none">
+              <div className="text-gray-600 leading-relaxed whitespace-pre-wrap">
+                {selectedSummary.summary}
+              </div>
             </div>
           </div>
 
-          {/* 오른쪽: 타임라인 */}
+          {/* 오른쪽: 스크립트 */}
           <div className="bg-white rounded-2xl p-8 shadow-sm">
-            <h2 className="text-2xl font-bold mb-6">타임라인</h2>
-            <div className="space-y-6">
-              {(selectedSummary.timeline || []).map((item, index) => (
+            <h2 className="text-2xl font-bold mb-6">스크립트</h2>
+            <div className="space-y-4 max-h-[600px] overflow-y-auto">
+              {parsedScript.map((item, index) => (
                 <div
                   key={index}
-                  className="relative pl-8 border-l-2 border-blue-100 hover:border-blue-500">
-                  <div className="absolute left-0 top-0 -translate-x-[9px] w-4 h-4 rounded-full bg-blue-500" />
-                  <div className="space-y-2">
-                    <div className="flex items-baseline space-x-3">
-                      <span className="text-sm font-mono text-blue-600">
-                        {item.time}
-                      </span>
-                      <h3 className="text-lg font-semibold">{item.title}</h3>
-                    </div>
-                    <ul className="list-disc list-inside text-gray-600 text-sm space-y-1">
-                      {item.points?.map((point, idx) => (
-                        <li key={idx}>{point}</li>
-                      ))}
-                    </ul>
+                  className="p-4 rounded-lg border border-gray-100 hover:border-blue-200 transition-colors">
+                  <div className="flex items-baseline gap-4">
+                    <span className="text-sm font-mono text-blue-600 whitespace-nowrap">
+                      {formatTime(item.start)}
+                    </span>
+                    <p className="text-gray-700">{item.text}</p>
                   </div>
                 </div>
               ))}
