@@ -1,5 +1,6 @@
 /* eslint-disable react/prop-types */
-import 'react';
+import React from 'react';
+import ReactPlayer from 'react-player/youtube';
 import { Clock, AlarmClock, Share2, BookmarkPlus, Youtube } from 'lucide-react';
 
 const VideoInfoSection = ({ selectedSummary, videoId }) => {
@@ -9,10 +10,11 @@ const VideoInfoSection = ({ selectedSummary, videoId }) => {
         <h1 className="text-3xl font-bold">{selectedSummary.title}</h1>
 
         <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden">
-          <img
-            src={selectedSummary.thumbnailUrl}
-            alt={selectedSummary.title}
-            className="w-full h-full object-cover"
+          <ReactPlayer
+            url={`https://www.youtube.com/watch?v=${videoId}`}
+            width="100%"
+            height="100%"
+            controls
           />
         </div>
 

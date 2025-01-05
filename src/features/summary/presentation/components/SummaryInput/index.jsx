@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
+import styles from './SummaryInput.module.css';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { useSummaryInput } from '../../hooks/useSummaryInput';
 import {
@@ -48,12 +49,18 @@ export const SummaryInput = () => {
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto text-center space-y-6">
-      <h1 className="text-5xl font-bold mb-6 leading-tight">
-        Watch Less,
-        <br />
-        <span className="text-blue-600">Understand More</span>
-      </h1>
+    <div
+      className={`${styles['fade-in']} w-full max-w-3xl mx-auto text-center space-y-6`}>
+      <div>
+        <h1
+          className={`${styles['animated-text']} text-5xl font-bold mb-6 leading-tight`}>
+          Watch Less,
+        </h1>
+        <h1
+          className={`${styles['animated-text']} text-5xl font-bold mb-6 leading-tight text-blue-600`}>
+          Understand More
+        </h1>
+      </div>
       <p className="text-xl text-gray-600 mb-12">
         AI가 영상을 분석하고 핵심 내용을 추출합니다.
         <br />긴 영상도 몇 분 안에 파악하세요.
@@ -76,14 +83,17 @@ export const SummaryInput = () => {
               className={`w-full px-6 py-4 bg-white rounded-2xl border-2 
                 ${isProcessing ? 'border-blue-200' : 'border-gray-200'} 
                 ${error ? 'border-red-200' : ''}
-                focus:border-blue-500 outline-none text-lg shadow-sm
-                transition-all duration-200`}
+                focus:border-blue-500 outline-none text-lg shadow-sm ${
+                  styles['input-focus']
+                }`}
             />
             <button
               type="submit"
               disabled={isProcessing || !url.trim()}
-              className={`absolute right-2 top-2 px-6 py-2 rounded-xl 
-                flex items-center space-x-2 transition-all duration-200
+              className={`absolute right-2 top-1/2 transform -translate-y-1/2 px-6 py-2 rounded-xl 
+                flex items-center space-x-2 transition-all duration-200 ${
+                  styles['button-press']
+                }
                 ${
                   isProcessing
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
@@ -93,6 +103,43 @@ export const SummaryInput = () => {
               {!isProcessing && <ArrowRight className="w-4 h-4" />}
             </button>
           </form>
+
+          <br />
+
+          {/* 서비스 소개 섹션 */}
+          <div className="pt-20">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+              {[
+                {
+                  icon: <FileText className="w-8 h-8 text-blue-600" />,
+                  title: '스크립트 추출',
+                  description: '영상에서 자동으로 텍스트 추출',
+                },
+                {
+                  icon: <Sparkles className="w-8 h-8 text-blue-600" />,
+                  title: 'AI 분석',
+                  description: '핵심 내용 자동 분석',
+                },
+                {
+                  icon: <Clock className="w-8 h-8 text-blue-600" />,
+                  title: '요약 완성',
+                  description: '간단명료한 요약문 생성',
+                },
+              ].map((card, index) => (
+                <div
+                  key={index}
+                  className="bg-white rounded-lg shadow p-6 flex flex-col items-center text-center">
+                  <div className="w-16 h-16 flex items-center justify-center rounded-full bg-gray-50 mb-4">
+                    {card.icon}
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-800 mb-2">
+                    {card.title}
+                  </h3>
+                  <p className="text-sm text-gray-500">{card.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
 
           {isProcessing && (
             <div className="w-full bg-white rounded-2xl p-6 border border-blue-100 mt-4">
@@ -104,7 +151,9 @@ export const SummaryInput = () => {
                   return (
                     <div
                       key={index}
-                      className="flex flex-col items-center space-y-2">
+                      className={`flex flex-col items-center space-y-2 ${
+                        isActive ? styles['step-active'] : ''
+                      }`}>
                       <div
                         className={`w-12 h-12 rounded-full flex items-center justify-center
                         ${isActive ? 'bg-blue-100 text-blue-600' : ''}
@@ -112,7 +161,7 @@ export const SummaryInput = () => {
                           isComplete
                             ? 'bg-green-100 text-green-600'
                             : 'bg-gray-100 text-gray-400'
-                        }`}>
+                        } ${isComplete ? styles['success-animate'] : ''}`}>
                         {isComplete ? (
                           <CheckCircle2 className="w-6 h-6" />
                         ) : isActive ? (
@@ -142,46 +191,6 @@ export const SummaryInput = () => {
           )}
         </div>
       </div>
-
-      {!isProcessing && (
-        <div className="pt-20">
-          <div className="relative">
-            <div className="absolute top-6 left-[15%] right-[15%] h-[2px] bg-gray-200">
-              <div className="absolute top-0 left-0 h-full w-1/3 bg-blue-500" />
-            </div>
-
-            <div className="flex justify-between w-full relative z-10">
-              {[
-                {
-                  icon: <FileText className="w-5 h-5 text-blue-600" />,
-                  title: '스크립트 추출',
-                  description: '영상에서 자동으로 텍스트 추출',
-                },
-                {
-                  icon: <Sparkles className="w-5 h-5 text-blue-600" />,
-                  title: 'AI 분석',
-                  description: '핵심 내용 자동 분석',
-                },
-                {
-                  icon: <Clock className="w-5 h-5 text-blue-600" />,
-                  title: '요약 완성',
-                  description: '간단명료한 요약문 생성',
-                },
-              ].map((step, index) => (
-                <div key={index} className="flex flex-col items-center w-1/3">
-                  <div className="w-12 h-12 rounded-full bg-white border-2 border-blue-500 flex items-center justify-center mb-4">
-                    {step.icon}
-                  </div>
-                  <h3 className="text-sm font-semibold mb-1">{step.title}</h3>
-                  <p className="text-xs text-gray-500 text-center max-w-[120px]">
-                    {step.description}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

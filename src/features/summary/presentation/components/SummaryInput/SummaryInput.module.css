@@ -1,0 +1,103 @@
+/* 페이지 로딩 시 페이드인 애니메이션 */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  opacity: 0;
+  animation: fadeIn 1s ease-out forwards;
+}
+
+/* 텍스트 애니메이션 (위로 부드럽게 나타나기) */
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animated-text {
+  opacity: 0;
+  animation: fadeInUp 1.5s ease-in-out forwards;
+}
+
+.animated-text:nth-child(1) {
+  animation-delay: 0s;
+  /* 첫 번째 텍스트 즉시 실행 */
+}
+
+.animated-text:nth-child(2) {
+  animation-delay: 1.5s;
+  /* 두 번째 텍스트 1.5초 후 실행 */
+}
+
+/* 입력 필드 포커스 애니메이션 */
+.input-focus {
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.input-focus:focus {
+  box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+  transform: scale(1.02);
+}
+
+/* 버튼 클릭 애니메이션 */
+.button-press {
+  transition: transform 0.1s ease;
+}
+
+.button-press:active {
+  transform: scale(0.95);
+}
+
+/* 단계 진행 중 펄스 애니메이션 */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.step-active {
+  animation: pulse 1s infinite;
+}
+
+/* 성공적인 완료 애니메이션 */
+@keyframes success {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.success-animate {
+  animation: success 0.5s ease-out;
+}
