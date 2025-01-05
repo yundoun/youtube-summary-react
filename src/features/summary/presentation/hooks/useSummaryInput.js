@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { extractVideoId } from '../../../../../core/utils/videoId';
 import { dependencyContainer } from '../../infrastructure/di/DependencyContainer';
-import { setLoading, setError } from '../../aplication/store/summarySlice';
+import { setLoading, setError } from '../../application/store/summarySlice';
 import { summaryEventEmitter, SummaryEvents } from '../../domain/events/SummaryEventEmitter';
 
 export const useSummaryInput = () => {

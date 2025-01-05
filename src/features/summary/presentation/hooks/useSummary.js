@@ -6,7 +6,7 @@ import {
   setError,
   setSummaries,
   setSelectedSummary,
-} from '../../aplication/store/summarySlice';
+} from '../../application/store/summarySlice';
 
 export const useSummary = () => {
   const dispatch = useDispatch();

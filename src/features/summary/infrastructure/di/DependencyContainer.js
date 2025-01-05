@@ -2,7 +2,7 @@ import { SummaryUseCases } from '../../domain/useCases/summaryUseCases';
 import { WebSocketUseCases } from '../../domain/useCases/webSocketUseCases';
 import { SummaryRepositoryImpl } from '../repositories/SummaryRepositoryImpl';
 import { WebSocketServiceImpl } from '../repositories/WebSocketServiceImpl';
-import { StateService } from '../../aplication/services/StateService';
+import { StateService } from '../../application/services/StateService';
 
 class DependencyContainer {
   constructor() {

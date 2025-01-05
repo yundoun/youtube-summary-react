@@ -1,4 +1,4 @@
-import React from 'react';
+import 'react';
 import { SummaryInput } from '../components/SummaryInput';
 import { SummaryList } from '../components/SummaryList';
 

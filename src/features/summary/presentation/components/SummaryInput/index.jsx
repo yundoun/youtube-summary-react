@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+/* eslint-disable no-unused-vars */
+import { useState } from 'react';
 import styles from './SummaryInput.module.css';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { useSummaryInput } from '../../hooks/useSummaryInput';

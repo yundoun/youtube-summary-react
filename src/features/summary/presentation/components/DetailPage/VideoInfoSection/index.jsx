@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React from 'react';
+import 'react';
 import ReactPlayer from 'react-player/youtube';
 import { Clock, AlarmClock, Share2, BookmarkPlus, Youtube } from 'lucide-react';
 

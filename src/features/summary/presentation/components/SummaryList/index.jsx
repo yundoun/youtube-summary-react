@@ -8,7 +8,7 @@ const extractPreview = (summaryText) => {
   if (!summaryText) return '요약 생성 중...';
 
   // 특수문자 제거 및 정리
-  const cleanText = summaryText.replace(/[#*\[\]()]/g, '').trim();
+  const cleanText = summaryText.replace(/[#*[\]()]/g, '').trim();
 
   // 전체 줄거리 요약 부분 추출
   const summaryMatch = cleanText.match(

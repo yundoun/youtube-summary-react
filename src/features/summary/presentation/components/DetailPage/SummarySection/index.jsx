@@ -1,10 +1,11 @@
-import React from 'react';
+/* eslint-disable react/prop-types */
+import 'react';
 
 const parseSummary = (text) => {
   if (!text) return { summary: '', timeline: [] };
 
   // 특수문자 및 마크다운 문법 제거
-  const cleanText = text.replace(/[#*\[\]()]/g, '').trim();
+  const cleanText = text.replace(/[#*[\]()]/g, '').trim();
 
   // "전체 줄거리 요약"과 타임라인 부분으로 분리
   const [summaryPart = '', timelinePart = ''] =

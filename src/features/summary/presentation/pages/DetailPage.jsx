@@ -7,7 +7,7 @@ import {
   fetchSelectedSummary,
   clearSelectedSummary,
   setSelectedSummary,
-} from '../../aplication/store/summarySlice';
+} from '../../application/store/summarySlice';
 
 import NavigationBar from '../components/DetailPage/NavigationBar';
 import VideoInfoSection from '../components/DetailPage/VideoInfoSection';
