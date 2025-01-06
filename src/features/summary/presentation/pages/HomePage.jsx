@@ -1,6 +1,6 @@
 import 'react';
 import { SummaryInput } from '../components/SummaryInput';
-import { SummaryList } from '../components/SummaryList';
+import { SummaryListContainer } from '../components/SummaryList/components/SummaryListContainer';
 
 export const HomePage = () => {
   return (
@@ -34,7 +34,7 @@ export const HomePage = () => {
         {/* Summary List Section */}
         <div className="bg-gray-50 py-20">
           <div className="container mx-auto px-6">
-            <SummaryList />
+            <SummaryListContainer />
           </div>
         </div>
       </div>
