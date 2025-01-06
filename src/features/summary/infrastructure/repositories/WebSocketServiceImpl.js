@@ -28,7 +28,8 @@ export class WebSocketServiceImpl extends WebSocketRepository {
         console.log('WebSocket Connected');
         this.reconnectAttempts = 0;
         this.isConnecting = false;
-        this.stateService.handleWebSocketConnected();
+        // 웹소켓 연결 시 바로 2단계(AI 분석)로 진행
+        this.stateService.handleWebSocketConnected({ processStep: 2 });
 
         if (videoId) {
           this.sendMessage(videoId);

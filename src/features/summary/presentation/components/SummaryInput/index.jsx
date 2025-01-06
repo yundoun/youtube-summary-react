@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { useState } from 'react';
+import { useSelector } from 'react-redux';
 import styles from './SummaryInput.module.css';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { useSummaryInput } from '../../hooks/useSummaryInput';
@@ -16,36 +17,28 @@ import {
 export const SummaryInput = () => {
   const { url, setUrl, handleSubmit, activeVideoId } = useSummaryInput();
   const [isInputActive, setIsInputActive] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [error, setError] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
+  const { error } = useSelector((state) => state.summaryFeature.summary);
+  const { processStatus, isWebSocketConnected } = useSelector(
+    (state) => state.summaryFeature.summary
+  );
 
   useWebSocket(activeVideoId);
 
   const steps = [
-    { icon: <FileText className="w-5 h-5" />, label: '스크립트 추출 중...' },
-    { icon: <Sparkles className="w-5 h-5" />, label: 'AI 분석 중...' },
-    { icon: <Clock className="w-5 h-5" />, label: '요약문 생성 중...' },
+    { icon: <FileText className="w-6 h-6" />, label: '스크립트 추출 중...' },
+    { icon: <Sparkles className="w-6 h-6" />, label: 'AI 분석 중...' },
+    { icon: <Clock className="w-6 h-6" />, label: '요약문 생성 중...' },
+    { icon: <CheckCircle2 className="w-6 h-6" />, label: '요약 완료!' }, // 완료 단계 추가
   ];
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     if (!url.trim()) return;
 
-    setIsProcessing(true);
-    setError('');
-
     try {
       await handleSubmit(e);
-      for (let i = 0; i < steps.length; i++) {
-        setCurrentStep(i);
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-      }
     } catch (err) {
-      setError('처리 중 오류가 발생했습니다. 다시 시도해주세요.');
-    } finally {
-      setIsProcessing(false);
-      setCurrentStep(0);
+      console.error('처리 중 오류가 발생했습니다:', err);
     }
   };
 
@@ -80,9 +73,13 @@ export const SummaryInput = () => {
               onChange={(e) => setUrl(e.target.value)}
               onFocus={() => setIsInputActive(true)}
               onBlur={() => setIsInputActive(false)}
-              disabled={isProcessing}
+              disabled={processStatus.isProcessing}
               className={`w-full px-6 py-4 bg-white rounded-2xl border-2 
-                ${isProcessing ? 'border-blue-200' : 'border-gray-200'} 
+                ${
+                  processStatus.isProcessing
+                    ? 'border-blue-200'
+                    : 'border-gray-200'
+                } 
                 ${error ? 'border-red-200' : ''}
                 focus:border-blue-500 outline-none text-lg shadow-sm ${
                   styles['input-focus']
@@ -90,96 +87,132 @@ export const SummaryInput = () => {
             />
             <button
               type="submit"
-              disabled={isProcessing || !url.trim()}
+              disabled={processStatus.isProcessing || !url.trim()}
               className={`absolute right-2 top-1/2 transform -translate-y-1/2 px-6 py-2 rounded-xl 
                 flex items-center space-x-2 transition-all duration-200 ${
                   styles['button-press']
                 }
                 ${
-                  isProcessing
+                  processStatus.isProcessing
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700 text-white'
                 }`}>
-              <span>{isProcessing ? '처리중...' : '요약하기'}</span>
-              {!isProcessing && <ArrowRight className="w-4 h-4" />}
+              <span>
+                {processStatus.isProcessing ? '처리중...' : '요약하기'}
+              </span>
+              {!processStatus.isProcessing && (
+                <ArrowRight className="w-4 h-4" />
+              )}
             </button>
           </form>
 
-          <br />
-
-          {/* 서비스 소개 섹션 */}
-          <div className="pt-20">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-              {[
-                {
-                  icon: <FileText className="w-8 h-8 text-blue-600" />,
-                  title: '스크립트 추출',
-                  description: '영상에서 자동으로 텍스트 추출',
-                },
-                {
-                  icon: <Sparkles className="w-8 h-8 text-blue-600" />,
-                  title: 'AI 분석',
-                  description: '핵심 내용 자동 분석',
-                },
-                {
-                  icon: <Clock className="w-8 h-8 text-blue-600" />,
-                  title: '요약 완성',
-                  description: '간단명료한 요약문 생성',
-                },
-              ].map((card, index) => (
-                <div
-                  key={index}
-                  className="bg-white rounded-lg shadow p-6 flex flex-col items-center text-center">
-                  <div className="w-16 h-16 flex items-center justify-center rounded-full bg-gray-50 mb-4">
-                    {card.icon}
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-800 mb-2">
-                    {card.title}
-                  </h3>
-                  <p className="text-sm text-gray-500">{card.description}</p>
+          {/* 프로그레스바 또는 서비스 소개 섹션 조건부 렌더링 */}
+          {processStatus.isProcessing ? (
+            // 프로그레스바 섹션 - 디자인 개선
+            <div className="w-full bg-white rounded-3xl p-8 border border-blue-100 mt-8 shadow-lg">
+              <h3 className="text-xl font-bold text-gray-800 mb-6">
+                요약 진행 상황
+              </h3>
+              <div className="flex justify-between items-center relative">
+                {/* 프로그레스 라인 */}
+                <div className="absolute left-0 right-0 h-1 top-6 bg-gray-200">
+                  <div
+                    className="h-full bg-blue-500 transition-all duration-500"
+                    style={{
+                      width: `${
+                        ((processStatus.currentStep - 1) / (steps.length - 1)) *
+                        100
+                      }%`,
+                    }}
+                  />
                 </div>
-              ))}
-            </div>
-          </div>
 
-          {isProcessing && (
-            <div className="w-full bg-white rounded-2xl p-6 border border-blue-100 mt-4">
-              <div className="flex justify-between items-center">
                 {steps.map((step, index) => {
-                  const isActive = currentStep === index;
-                  const isComplete = currentStep > index;
+                  const stepNumber = index + 1;
+                  const isActive = processStatus.currentStep === stepNumber;
+                  const isComplete = processStatus.currentStep > stepNumber;
+                  const isFinal = stepNumber === steps.length;
 
                   return (
                     <div
                       key={index}
-                      className={`flex flex-col items-center space-y-2 ${
-                        isActive ? styles['step-active'] : ''
+                      className={`flex flex-col items-center space-y-3 relative ${
+                        isActive
+                          ? 'scale-110 transition-transform duration-300'
+                          : ''
                       }`}>
                       <div
-                        className={`w-12 h-12 rounded-full flex items-center justify-center
-                        ${isActive ? 'bg-blue-100 text-blue-600' : ''}
+                        className={`w-14 h-14 rounded-full flex items-center justify-center 
+                        transition-all duration-300 z-10
+                        ${
+                          isActive
+                            ? 'bg-blue-100 text-blue-600 shadow-lg ring-4 ring-blue-50'
+                            : ''
+                        }
                         ${
                           isComplete
                             ? 'bg-green-100 text-green-600'
-                            : 'bg-gray-100 text-gray-400'
+                            : !isActive
+                            ? 'bg-gray-100 text-gray-400'
+                            : ''
                         } ${isComplete ? styles['success-animate'] : ''}`}>
                         {isComplete ? (
-                          <CheckCircle2 className="w-6 h-6" />
+                          <CheckCircle2 className="w-7 h-7" />
                         ) : isActive ? (
-                          <Loader2 className="w-6 h-6 animate-spin" />
+                          <Loader2 className="w-7 h-7 animate-spin" />
                         ) : (
                           step.icon
                         )}
                       </div>
                       <span
-                        className={`text-sm font-medium
-                        ${isActive ? 'text-blue-600' : ''}
-                        ${isComplete ? 'text-green-600' : 'text-gray-400'}`}>
+                        className={`text-sm font-medium whitespace-nowrap px-4 py-2 rounded-full
+                        transition-all duration-300
+                        ${isActive ? 'bg-blue-50 text-blue-600' : ''}
+                        ${isComplete ? 'text-green-600' : 'text-gray-400'}
+                        ${
+                          isFinal && isActive
+                            ? 'bg-green-50 text-green-600 animate-bounce'
+                            : ''
+                        }`}>
                         {step.label}
                       </span>
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          ) : (
+            <div className="pt-20">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                {[
+                  {
+                    icon: <FileText className="w-8 h-8 text-blue-600" />,
+                    title: '스크립트 추출',
+                    description: '영상에서 자동으로 텍스트 추출',
+                  },
+                  {
+                    icon: <Sparkles className="w-8 h-8 text-blue-600" />,
+                    title: 'AI 분석',
+                    description: '핵심 내용 자동 분석',
+                  },
+                  {
+                    icon: <Clock className="w-8 h-8 text-blue-600" />,
+                    title: '요약 완성',
+                    description: '간단명료한 요약문 생성',
+                  },
+                ].map((card, index) => (
+                  <div
+                    key={index}
+                    className="bg-white rounded-lg shadow p-6 flex flex-col items-center text-center">
+                    <div className="w-16 h-16 flex items-center justify-center rounded-full bg-gray-50 mb-4">
+                      {card.icon}
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-800 mb-2">
+                      {card.title}
+                    </h3>
+                    <p className="text-sm text-gray-500">{card.description}</p>
+                  </div>
+                ))}
               </div>
             </div>
           )}

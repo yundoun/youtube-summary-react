@@ -22,7 +22,10 @@ export class WebSocketUseCases {
         this.handleMessage(videoId, type, data);
       });
 
-      summaryEventEmitter.emit(SummaryEvents.WEBSOCKET_CONNECTED, { videoId });
+      summaryEventEmitter.emit(SummaryEvents.WEBSOCKET_CONNECTED, {
+        videoId,
+        processStep: 1
+      });
     } catch (error) {
       console.error('Error initializing WebSocket:', error);
       summaryEventEmitter.emit(SummaryEvents.WEBSOCKET_ERROR, {
@@ -39,6 +42,7 @@ export class WebSocketUseCases {
    * @param {any} data - 메시지 데이터
    */
   handleMessage(videoId, type, data) {
+    console.log('[WebSocketUseCases] Message received - type:', type);
     summaryEventEmitter.emit(SummaryEvents.WEBSOCKET_MESSAGE, {
       videoId,
       type,
@@ -46,35 +50,52 @@ export class WebSocketUseCases {
     });
 
     switch (type) {
-      case 'summary':
-        {
-          const summaryData = {
-            videoId,
-            summary: data,
-            status: 'in_progress',
-            _action: 'UPDATE_SUMMARY'
-          };
-          this.summaryCache.set(videoId, summaryData);  // 캐시에 저장
-          summaryEventEmitter.emit(SummaryEvents.SUMMARY_UPDATED, summaryData);
-          break;
-        }
+      case 'summary': {
+        console.log('[WebSocketUseCases] Processing summary message - Step 2 (AI 분석)');
+        const summaryData = {
+          videoId,
+          summary: data,
+          status: 'in_progress',
+          _action: 'UPDATE_SUMMARY',
+          processStep: 2
+        };
+        this.summaryCache.set(videoId, summaryData);
+        summaryEventEmitter.emit(SummaryEvents.SUMMARY_UPDATED, summaryData);
+        break;
+      }
 
-      case 'complete':
-        {
-          const cachedSummary = this.summaryCache.get(videoId);
+      case 'complete': {
+        console.log('[WebSocketUseCases] Processing complete message - Step 3 (요약 생성)');
+        const cachedSummary = this.summaryCache.get(videoId);
+
+        // 요약 생성 단계 (3단계) 이벤트 발생
+        summaryEventEmitter.emit(SummaryEvents.SUMMARY_UPDATED, {
+          videoId,
+          status: 'completed',
+          completedAt: new Date().toISOString(),
+          _action: 'UPDATE_STATUS',
+          processStep: 3,
+          summary: cachedSummary?.summary
+        });
+
+        // 잠시 대기 후 완료 단계 (4단계) 이벤트 발생
+        setTimeout(() => {
           summaryEventEmitter.emit(SummaryEvents.SUMMARY_UPDATED, {
             videoId,
             status: 'completed',
             completedAt: new Date().toISOString(),
             _action: 'UPDATE_STATUS',
-            summary: cachedSummary?.summary  // 캐시된 summary 데이터 사용
+            processStep: 4,
+            summary: cachedSummary?.summary
           });
-          this.summaryCache.delete(videoId);  // 캐시 정리
-          break;
-        }
+        }, 1000);  // 1초 후 완료 단계로 전환
+
+        this.summaryCache.delete(videoId);
+        break;
+      }
 
       default:
-        console.log('Unknown message type:', type);
+        console.log(`[WebSocketUseCases] Unknown message type: ${type}`);
     }
   }
 
@@ -84,8 +105,11 @@ export class WebSocketUseCases {
   cleanup() {
     try {
       this.webSocketRepository.disconnect();
-      this.summaryCache.clear();  // 캐시 정리 추가
-      summaryEventEmitter.emit(SummaryEvents.WEBSOCKET_DISCONNECTED);
+      this.summaryCache.clear();
+      // cleanup 시 프로세스 단계 초기화
+      summaryEventEmitter.emit(SummaryEvents.WEBSOCKET_DISCONNECTED, {
+        processStep: 0  // 초기 상태로 리셋
+      });
     } catch (error) {
       console.error('Error cleaning up WebSocket:', error);
       summaryEventEmitter.emit(SummaryEvents.WEBSOCKET_ERROR, {

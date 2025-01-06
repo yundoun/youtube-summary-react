@@ -50,7 +50,7 @@ const calculateDuration = (script) => {
 
 //  readTime은 summary의 텍스트 길이에 따라 대략적인 읽기 시간을 계산합니다. 평균적인 사람의 읽기 속도를 200단어/분으로 가정
 const calculateReadTime = (summaryText) => {
-  if (!summaryText) return '2분';
+  if (!summaryText) return '계산하는 중';
 
   const words = summaryText.split(/\s+/).length; // 단어 수 계산
   const wordsPerMinute = 200; // 평균 읽기 속도 (단어/분)
