@@ -1,12 +1,12 @@
 export const API_ENDPOINTS = {
-  CONTENT: '/api/summary/content',
-  CONTENT_ALL: '/api/summary/content/all',
-  WS_SUMMARY: 'ws://localhost:8000/summary/ws/summary',
-  WS_PING: 'ws://localhost:8000/summary/ws/ping'
+  CONTENT: import.meta.env.VITE_API_CONTENT,
+  CONTENT_ALL: import.meta.env.VITE_API_CONTENT_ALL,
+  WS_SUMMARY: import.meta.env.VITE_WS_SUMMARY,
+  WS_PING: import.meta.env.VITE_WS_PING,
 };
 
 export const MESSAGE_TYPES = {
   SUMMARY: 'summary',
   COMPLETE: 'complete',
-  PING: 'ping'
+  PING: 'ping',
 };
