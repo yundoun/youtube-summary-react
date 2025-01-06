@@ -105,7 +105,6 @@ export const SummaryInput = () => {
               )}
             </button>
           </form>
-
           {/* 프로그레스바 또는 서비스 소개 섹션 조건부 렌더링 */}
           {processStatus.isProcessing ? (
             // 프로그레스바 섹션 - 디자인 개선
@@ -183,32 +182,40 @@ export const SummaryInput = () => {
             </div>
           ) : (
             <div className="pt-20">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto relative">
+                <div className="absolute top-1/2 left-1/3 w-1/6 h-0.5 bg-gray-200 transform -translate-y-1/2" />
+                <div className="absolute top-1/2 right-1/3 w-1/6 h-0.5 bg-gray-200 transform -translate-y-1/2" />
                 {[
                   {
                     icon: <FileText className="w-8 h-8 text-blue-600" />,
-                    title: '스크립트 추출',
+                    title: 'STEP 1',
+                    subtitle: '스크립트 추출',
                     description: '영상에서 자동으로 텍스트 추출',
                   },
                   {
                     icon: <Sparkles className="w-8 h-8 text-blue-600" />,
-                    title: 'AI 분석',
+                    title: 'STEP 2',
+                    subtitle: 'AI 분석',
                     description: '핵심 내용 자동 분석',
                   },
                   {
                     icon: <Clock className="w-8 h-8 text-blue-600" />,
-                    title: '요약 완성',
+                    title: 'STEP 3',
+                    subtitle: '요약 완성',
                     description: '간단명료한 요약문 생성',
                   },
                 ].map((card, index) => (
                   <div
                     key={index}
-                    className="bg-white rounded-lg shadow p-6 flex flex-col items-center text-center">
+                    className="bg-white rounded-lg shadow p-6 flex flex-col items-center text-center relative">
                     <div className="w-16 h-16 flex items-center justify-center rounded-full bg-gray-50 mb-4">
                       {card.icon}
                     </div>
-                    <h3 className="text-lg font-bold text-gray-800 mb-2">
+                    <span className="text-xs font-semibold text-blue-600 mb-1">
                       {card.title}
+                    </span>
+                    <h3 className="text-lg font-bold text-gray-800 mb-2">
+                      {card.subtitle}
                     </h3>
                     <p className="text-sm text-gray-500">{card.description}</p>
                   </div>

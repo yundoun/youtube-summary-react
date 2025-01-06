@@ -12,14 +12,14 @@ export const HomePage = () => {
             <div className="text-xl font-bold">
               SUMMARY<span className="text-blue-600">HUB</span>
             </div>
-            <div className="flex items-center space-x-6">
+            {/* <div className="flex items-center space-x-6">
               <button className="text-gray-600 hover:text-gray-900">
                 Login
               </button>
               <button className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800">
                 Sign up
               </button>
-            </div>
+            </div> */}
           </div>
         </div>
       </nav>

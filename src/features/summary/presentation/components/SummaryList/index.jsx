@@ -110,9 +110,9 @@ const SummaryCard = ({ summary }) => {
                 <span className="px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded-full">
                   {summary.status === 'completed' ? '완료' : '진행 중'}
                 </span>
-                <span className="text-sm text-gray-500">
+                {/* <span className="text-sm text-gray-500">
                   {new Date(summary.createdAt).toLocaleString()}
-                </span>
+                </span> */}
               </div>
               <h3 className="text-xl font-semibold group-hover:text-blue-600 transition-colors duration-200">
                 {summary.title}
