@@ -1,6 +1,6 @@
 import 'react';
-import { SummaryInputContainer } from '../components/SummaryInput';
-import { SummaryListContainer } from '../components/SummaryList';
+import { SummaryInputContainer } from '../components/HomePage/SummaryInput';
+import { SummaryListContainer } from '../components/HomePage/SummaryList';
 
 export const HomePage = () => {
   return (

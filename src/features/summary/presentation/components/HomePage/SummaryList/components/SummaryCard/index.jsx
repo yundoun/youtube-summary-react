@@ -6,7 +6,7 @@ import {
   calculateDuration,
   calculateReadTime,
   formatDuration,
-} from '../../../../../../../core/utils';
+} from '../../../../../../../../core/utils';
 
 export const SummaryCard = ({ summary }) => {
   const navigate = useNavigate();

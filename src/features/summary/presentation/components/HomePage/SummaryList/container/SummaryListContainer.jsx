@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useSummary } from '../../../hooks/useSummary';
+import { useSummary } from '../../../../hooks/useSummary';
 import { SummaryListView } from '../components/SummaryListView';
 import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';

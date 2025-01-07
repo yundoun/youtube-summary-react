@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { useWebSocket } from '../../../hooks/useWebSocket';
-import { useSummaryInput } from '../../../hooks/useSummaryInput';
+import { useWebSocket } from '../../../../hooks/useWebSocket';
+import { useSummaryInput } from '../../../../hooks/useSummaryInput';
 import styles from '../styles/animations.module.css';
 
 import InputField from '../components/InputField';
