@@ -1,6 +1,6 @@
 import 'react';
-import { SummaryInput } from '../components/SummaryInput';
-import { SummaryList } from '../components/SummaryList';
+import { SummaryInputContainer } from '../components/HomePage/SummaryInput';
+import { SummaryListContainer } from '../components/HomePage/SummaryList';
 
 export const HomePage = () => {
   return (
@@ -28,13 +28,13 @@ export const HomePage = () => {
       <div className="flex flex-col min-h-screen">
         {/* Hero Section with SummaryInput */}
         <div className="flex-1 flex flex-col items-center justify-center px-4 bg-gradient-to-b from-gray-50/50 py-20">
-          <SummaryInput />
+          <SummaryInputContainer />
         </div>
 
-        {/* Summary List Section */}
+        {/* Summary List Section -> 리팩토링 완료*/}
         <div className="bg-gray-50 py-20">
           <div className="container mx-auto px-6">
-            <SummaryList />
+            <SummaryListContainer />
           </div>
         </div>
       </div>
