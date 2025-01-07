@@ -1,6 +1,6 @@
 import 'react';
 import { SummaryInput } from '../components/SummaryInput';
-import { SummaryListContainer } from '../components/SummaryList/components/SummaryListContainer';
+import { SummaryListContainer } from '../components/SummaryList';
 
 export const HomePage = () => {
   return (
@@ -31,7 +31,7 @@ export const HomePage = () => {
           <SummaryInput />
         </div>
 
-        {/* Summary List Section */}
+        {/* Summary List Section -> 리팩토링 완료*/}
         <div className="bg-gray-50 py-20">
           <div className="container mx-auto px-6">
             <SummaryListContainer />

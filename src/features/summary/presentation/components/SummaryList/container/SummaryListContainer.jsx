@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
-import { useSummary } from '../../../../hooks/useSummary';
-import { SummaryList } from '../../../SummaryList';
-import { LoadingState } from '../../components/LoadingState';
-import { ErrorState } from '../../components/ErrorState';
+import { useSummary } from '../../../hooks/useSummary';
+import { SummaryListView } from '../components/SummaryListView';
+import { LoadingState } from '../components/LoadingState';
+import { ErrorState } from '../components/ErrorState';
 
 export const SummaryListContainer = () => {
   const { summaries, fetchAllSummaries, isLoading } = useSummary();
@@ -23,5 +23,5 @@ export const SummaryListContainer = () => {
     return <ErrorState />;
   }
 
-  return <SummaryList summaries={summaries} />;
+  return <SummaryListView summaries={summaries} />;
 };
