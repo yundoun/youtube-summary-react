@@ -1,8 +1,97 @@
-# React + Vite
+![유튜브 영상 요약 웹 어플리케이션](https://github.com/user-attachments/assets/723fa306-58bb-4d51-8596-59584953903e)
+![유튜브 영상 요약 웹 어플리케이션 (1)](https://github.com/user-attachments/assets/d4d78b70-20b0-48ec-ab39-f526961d17f7)
+![유튜브 영상 요약 웹 어플리케이션 (2)](https://github.com/user-attachments/assets/5afc0e75-07b0-42e1-be18-c08f84e0a68b)
+![유튜브 영상 요약 웹 어플리케이션 (3)](https://github.com/user-attachments/assets/07696dd9-3c0e-47bb-a78b-7d1e56e502e9)
+![유튜브 영상 요약 웹 어플리케이션 (4)](https://github.com/user-attachments/assets/2914b5de-2511-42e4-bb55-2cb0ca821a92)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-Currently, two official plugins are available:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+# SummaryHub - 유튜브 영상 요약 웹 애플리케이션
+
+## 프로젝트 개요
+SummaryHub는 유튜브 URL을 기반으로 영상의 핵심 내용을 자동으로 요약해주는 웹 애플리케이션입니다.   
+긴 영상의 핵심 내용을 빠르게 파악하고자 하는 사용자들의 시간을 절약하고, 텍스트 기반 정보를 요약해 효율적인 콘텐츠 소비를 지원합니다.
+
+개발 기간 : 2024.12.30 ~ 2025.01.05 
+
+담당 역할 : 프론트엔드 개발, 아키텍처 설계
+
+## 기술 스택
+### 핵심 기술
+- Frontend : React 18.3.1, Vite 6.0.5
+- 상태 관리 : Redux Toolkit
+- 스타일링 : TailwindCSS
+- 라우팅 : React Router DOM
+- 비동기 통신 : WebSocket
+
+### 추가 라이브러리
+- React Player (비디오 재생)
+- Lucide React (아이콘)
+
+## 주요 기능
+### 1. 실시간 영상 요약
+- 사용자가 입력한 유튜브 URL의 영상을 실시간으로 요약
+- WebSocket 프로토콜을 활용한 서버-클라이언트 양방향 통신으로 처리 상태 실시간 업데이트
+- 요약 프로세스 : URL입력 -> WebSocket 연결 -> 실시간 진행 상태 확인 -> 결과 표시
+
+### 2. 요약 목록 조회
+- 서버에 저장된 모든 요약 기록을 목록으로 표시
+- 각 항목에 영상 제목, 썸네일, 요약 내용, 원본 길이, 읽는 시간 등 정보 제공
+
+### 3. 요약 상세 정보 조회
+- 각 요약의 상세 내용 확인 가능
+- 영상 기본 정보(제목, 썸네일), 요약된 핵심 내용, 전체 스크립트 텍스트 제공
+- 타임라인 분석 기능으로 영상 구간별 주요 내용 파악 가능
+
+## 프로젝트 구조
+### 클린 아키텍처 적용
+프로젝트는 클린 아키텍처 원칙을 따라 다음과 같은 계층 구조로 설계되었습니다.
+
+```
+features/summary/
+├── domain/
+│   ├── entities/
+│   ├── events/
+│   ├── repositories/
+│   └── useCases/
+├── application/
+│   ├── store/
+│   └── services/
+├── infrastructure/
+│   ├── di/
+│   ├── repositories/
+│   └── services/
+└── presentation/
+    ├── components/
+    ├── pages/
+    └── hooks/
+```
+## 기술적 도전과 해결 방법
+### 1. WebSocket을 활용한 실시간 처리
+도전 과제 : 영상 요약 과정이 길어질 수 있으니 사용자에게 실시간 진행 상황을 제공해야 했습니다.
+
+해결 방법: WebSocket 프로토콜을 도입하여 서버-클라이언트 간 양방향 통신을 구현했습니다. 이를 통해 요약 진행 상태를 실시간으로 업데이트하고, 사용자 경험을 향상시켰습니다.
+
+### 2. 클린 아키텍처 도입
+도전 과제: 프로젝트의 확장성과 유지보수성을 높이기 위한 구조가 필요했습니다.
+해결 방법: 도메인 중심의 클린 아키텍처를 도입하여 비즈니스 로직과 인프라스트럭처 코드를 분리했습니다. 이는 추후 새로운 기능 추가와 리팩토링 시 코드 변경 범위를 최소화합니다.
+
+## 향후 개선 계획
+### 기능적 개선사항
+- 사용자 관리 시스템 (회원가입/로그인)
+- 사용자별 요약 히스토리 관리
+- 개인화된 대시보드 제공
+
+### 기술적 개선사항
+- WebSocket 연결 안정성 강화
+- 모바일 환경 지원을 위한 반응형 디자인 구현
+- 접근성 강화
+
+## 프로젝트를 통해 배운 점
+- 클린 아키텍처와 같은 설계 패턴의 실제 적용 경험
+- WebSocket을 활용한 실시간 데이터 처리 기법
+- React 기반의 대규모 애플리케이션 구조화 방법
+- Redux Toolkit을 활용한 효율적인 상태 관리
+- 사용자 경험을 고려한 UI/UX 설계의 중요성
+
+
